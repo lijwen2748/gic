@@ -21,6 +21,17 @@ namespace gic
 		}
 		
 		bool sat_solve (State* start, State* next);
+		
+		Cube& get_uc (); 
+		
+		inline void update_bad (State* t) {
+			//bads_.push_back (t);
+			//TO BE DONE
+		}
+		inline void update_init (State* t) {
+			//inits_.push_back (t);
+			//TO BE DONE
+		}
 			
 	};
 
