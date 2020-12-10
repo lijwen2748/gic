@@ -98,9 +98,9 @@ namespace gic{
 		while (!invariant_check ()){ //  /neg C /\ T /\ C', to be done
 		    
 		    Assignment &t = get_assignment (); //get assignment in /neg C,to be done
-		    if (sat_solve (ini_, t)){
-		    	Assignment &partial_t = get_partial (t,ini_); //to be done
-		    	update_ini (partial_t);      //to be done
+		    if (sat_solve (init_, t)){
+		    	Assignment &partial_t = get_partial (t,init_); //to be done
+		    	update_init (partial_t);      //to be done
 		    	if (sat_solve (init_, bad))
 		    		return true;
 		    	renew_invariant (bad); //two different implementations, to be done
@@ -110,5 +110,13 @@ namespace gic{
 		}
 		return false;
 	}
+	
+	
+	
+	/***********************help function****************************/
+	bool Gic::sat_solve (State* start, State* next);	
+	
+	
+	
 
 }	
