@@ -76,9 +76,9 @@ namespace gic{
 					
 		while (!invariant_check ()){ //  C /\ T /\ \neg C', to be done
 		    
-		    Assignment &t = get_assignment (); //to be done
+		    Assignment &t = get_assignment (); //get assignment in \neg C', to be done
 		    if (sat_solve (t, bad)){
-		    	Assignment &partial_t = get_partial (); //to be done
+		    	Assignment &partial_t = get_partial (t,bad); //to be done
 		    	update_bad (partial_t);      //to be done
 		    	if (sat_solve (init_, bad))
 		    		return true;
@@ -91,6 +91,24 @@ namespace gic{
 	}
 	
 	bool Gic::backward_gic_check (){
+		if (sat_solve (init_, bad_))  //to be done
+			return true;
+		initialize_invariant (get_uc ());  //to be done
+					
+		while (!invariant_check ()){ //  /neg C /\ T /\ C', to be done
+		    
+		    Assignment &t = get_assignment (); //get assignment in /neg C,to be done
+		    if (sat_solve (ini_, t)){
+		    	Assignment &partial_t = get_partial (t,ini_); //to be done
+		    	update_ini (partial_t);      //to be done
+		    	if (sat_solve (init_, bad))
+		    		return true;
+		    	renew_invariant (bad); //two different implementations, to be done
+		    }
+		    else
+		    	update_invariant (get_uc ())  //to be done
+		}
+		return false;
 	}
 
 }	
