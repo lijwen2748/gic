@@ -154,6 +154,19 @@ namespace gic{
 			inv_.push_back (bad_);
 	}
 	
+	bool Gic::invariant_check(){
+		if (forward_){
+			for (auto it = invariant.begin(); it != invariant.end()); ++it){
+				
+			}
+		}
+		else{
+
+
+		}
+	}
+
+
 	void Gic::renew_invariant (Cube& uc){
 		if (forward_){
 			inv_.clear();

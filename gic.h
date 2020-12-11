@@ -13,6 +13,11 @@ namespace gic
 		void print_evidence (std::ofstream&);
 		
 	protected:
+		/*****data structure******/
+		typedef vector<int> Cube;
+		vector<Cube> invariant;
+
+		/*****function******/
 		inline bool sat_solve (State* s, int bad) {
 			stats_->count_main_solver_SAT_time_start ();
 	        bool res = solver_->solve_with_assumption (s->s(), bad);
@@ -22,6 +27,8 @@ namespace gic
 		
 		bool sat_solve (State* start, State* next);
 		
+		bool invariant_check();
+
 		Cube& get_uc (); 
 		
 		inline void update_bad (State* t) {
