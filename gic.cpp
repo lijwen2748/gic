@@ -156,7 +156,7 @@ namespace gic{
 	
 	bool Gic::invariant_check(){
 		if (forward_){
-			for (auto it = invariant.begin(); it != invariant.end()); ++it){
+			for (auto it = inv_.begin(); it != inv_.end()); ++it){
 				
 			}
 		}

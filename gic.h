@@ -15,7 +15,7 @@ namespace gic
 	protected:
 		/*****data structure******/
 		typedef vector<int> Cube;
-		vector<Cube> invariant;
+		vector<Cube> inv_;
 
 		/*****function******/
 		inline bool sat_solve (State* s, int bad) {
