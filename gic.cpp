@@ -76,11 +76,11 @@ namespace gic{
 					
 		while (!invariant_check ()){ //  C /\ T /\ \neg C', to be done
 		    
-		    Assignment &t = get_assignment (); //get assignment in \neg C', to be done
-		    if (sat_solve (t, bad)){
-		    	Assignment &partial_t = get_partial (t,bad); //to be done
+		    State* t = get_new_state (); //get assignment in \neg C', to be done
+		    if (sat_solve (t, bad_)){
+		    	Assignment& partial_t = get_partial (t); //to be done
 		    	update_bad (partial_t);      //to be done
-		    	if (sat_solve (init_, bad))
+		    	if (sat_solve (init_, bad_))
 		    		return true;
 		    	renew_invariant (get_uc ()); //two different implementations, to be done
 		    }
@@ -97,13 +97,13 @@ namespace gic{
 					
 		while (!invariant_check ()){ //  /neg C /\ T /\ C', to be done
 		    
-		    Assignment &t = get_assignment (); //get assignment in /neg C,to be done
+		    State* t = get_new_state (); //get assignment in /neg C,to be done
 		    if (sat_solve (init_, t)){
-		    	Assignment &partial_t = get_partial (t,init_); //to be done
+		    	Assignment& partial_t = get_partial (t); //to be done
 		    	update_init (partial_t);      //to be done
-		    	if (sat_solve (init_, bad))
+		    	if (sat_solve (init_, bad_))
 		    		return true;
-		    	renew_invariant (bad); //two different implementations, to be done
+		    	renew_invariant (bad_); //two different implementations, to be done
 		    }
 		    else
 		    	update_invariant (get_uc ())  //to be done
@@ -143,6 +143,7 @@ namespace gic{
 					tmp.push_back (*iter);
 			uc = tmp;		
 		}
+		assert (!uc.empty ());
 		return uc;
 	}
 	
@@ -184,14 +185,31 @@ namespace gic{
 	}
 	
 	void Gic::update_bad (State* t) {
-			//bads_.push_back (t);
-			//TO BE DONE
+		bads_.push_back (t);
+		add_bad_to_solver (t); //to be done
 	}
 	
 	void Gic::update_init (State* t) {
-			//inits_.push_back (t);
-			//TO BE DONE
+		inits_.push_back (t);
+		add_init_to_solver (t); //to be done
 	}
 	
-
+	State* get_new_state (){
+		Assignment st = solver_->get_state (forward_);
+		std::pair<Assignment, Assignment> pa = state_pair (st);
+		State* res = new State (s, pa.first, pa.second);
+		
+		return res;
+	}
+	
+	Assignment& get_partial (State* t){//more than one implementation
+		if (forward_){
+			assert (!sat_solve (t->all(), -bad));
+		}
+		else{
+			return t->s ();
+		}	
+		return get_uc (); 
+	}
+	
 }	
