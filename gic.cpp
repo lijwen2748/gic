@@ -147,31 +147,57 @@ namespace gic{
 		return uc;
 	}
 	
-	void Gic::initialize_invariant (Cube& uc) {
+	void Gic::initialize_invariant (Cube uc) {
 		assert (inv_.size () == 0);
-		if (forward_)
+		if (forward_){
+			assert (inv_solver_ != NULL);
+			uc.insert (uc.begin(), inv_solver_->get_flag ());
 			inv_.push_back (uc);
+		}
 		else
 			inv_.push_back (bad_);
 	}
 	
 	bool Gic::invariant_check(){
+		if (inv_solver_ == NULL){
+			inv_solver_ = new InvSolver ();
+			inv_solver_->add_transition ();
+		}
+		
 		if (forward_){
 			for (auto it = inv_.begin(); it != inv_.end()); ++it){
-				
+				if (inv_solver_->solve_with_assumption (*it))
+					return false;
 			}
+			return true;
 		}
 		else{
-
-
+			for (auto it = inv_.begin(); it != inv_.end()); ++it){
+				if (inv_solver_->solve_with_assumption (inv_prime (*it))) //to be done
+					return false;
+			}
+			return true;
 		}
+		return false;
 	}
+	
+	Assignment& Gic::inv_prime (Assignment& cu){
+		Assignment res;
+		auto it = cu.begin();
+		it ++;
+		for (; it != cu.end(); ++it)
+			res.push_back (model_->prime (*it));
+		return res;
+	} 
 
 
-	void Gic::renew_invariant (Cube& uc){
+	void Gic::renew_invariant (Cube uc){
 		if (forward_){
 			inv_.clear();
+			assert (inv_solver_ != NULL);
+			uc.insert (uc.begin(), inv_solver_->get_flag ());
 			inv_.push_back (uc);
+			//not finished
 		}
 		else{
 			inv_.clear ();
@@ -180,13 +206,15 @@ namespace gic{
 		//MORE efficient algorithm is NEEDED!
 	}
 	
-	void Gic::update_invariant (Cube& uc){
+	void Gic::update_invariant (Cube uc){
+		assert (inv_solver_ != NULL);
+		uc.insert (uc.begin(), inv_solver_->get_flag ());
 		inv_.push_back (uc);
 	}
 	
 	void Gic::update_bad (State* t) {
 		bads_.push_back (t);
-		add_bad_to_solver (t->s()); //to be done
+		add_bad_to_solver (t->s()); 
 	}
 	
 	void Gic::add_bad_to_solver (Cube& st){
@@ -223,15 +251,15 @@ namespace gic{
 		solver_->add_clause (tmp);
 	}
 	
-	State* get_new_state (){
-		Assignment st = solver_->get_state (forward_);
+	State* Gic::get_new_state (){
+		Assignment st = inv_solver_->get_state (forward_);
 		std::pair<Assignment, Assignment> pa = state_pair (st);
 		State* res = new State (s, pa.first, pa.second);
 		
 		return res;
 	}
 	
-	Assignment& get_partial (State* t){//more than one implementation
+	Assignment& Gic::get_partial (State* t){//more than one implementation
 		if (forward_){
 			assert (!sat_solve (t->all(), -bad));
 		}
