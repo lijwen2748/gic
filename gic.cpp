@@ -186,12 +186,41 @@ namespace gic{
 	
 	void Gic::update_bad (State* t) {
 		bads_.push_back (t);
-		add_bad_to_solver (t); //to be done
+		add_bad_to_solver (t->s()); //to be done
+	}
+	
+	void Gic::add_bad_to_solver (Cube& st){
+		int flag = solver_->get_flag ();
+		int new_bad = solver_->get_flag ();
+		solver_->add_equivalence (-new_bad, -bad_, -flag);
+		Clause& tmp;
+		tmp.push_back (flag);
+		for (auto it = st.begin (); it != st.end(); ++it){
+			tmp.push_back (-(*st));
+			solver_->add_clause (-flag, *it);
+		}
+		solver_->add_clause (tmp);
 	}
 	
 	void Gic::update_init (State* t) {
 		inits_.push_back (t);
-		add_init_to_solver (t); //to be done
+		add_init_to_solver (t); 
+	}
+	
+	void Gic::add_init_to_solver (Cube& st){
+		int flag = solver_->get_flag ();
+		int new_init = solver_->get_flag ();
+		int init_flag = get_init_flag (); //to be done
+		set_init_flag (new_init);
+		
+		solver_->add_equivalence (-new_init, -init_flag, -flag);
+		Clause& tmp;
+		tmp.push_back (flag);
+		for (auto it = st.begin (); it != st.end(); ++it){
+			tmp.push_back (-(*st));
+			solver_->add_clause (-flag, *it);
+		}
+		solver_->add_clause (tmp);
 	}
 	
 	State* get_new_state (){
