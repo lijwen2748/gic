@@ -20,7 +20,10 @@ namespace gic
 
 		typedef std::vector<int> Assignment;
 
+		int init_flag;
 		/*****function******/
+		void gic_initialization ();
+
 		bool gic_check ();
 
 		bool forward_gic_check ();
@@ -62,6 +65,7 @@ namespace gic
 
 		Assignment& get_partial (State* t);
 		
+		int get_init_flag ();
 			
 	};
 

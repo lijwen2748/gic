@@ -54,6 +54,10 @@ namespace gic{
 	    return res;
 	}
 	
+	void Gic::gic_initialization (){
+
+	}
+
 	bool Gic::gic_check (){
 		if (verbose_)
 			cout << "start check ..." << endl;
@@ -269,4 +273,7 @@ namespace gic{
 		return get_uc (); 
 	}
 	
+	int get_init_flag (){
+		
+	}
 }	
