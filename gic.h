@@ -20,8 +20,10 @@ namespace gic
 
 		typedef std::vector<int> Assignment;
 
-		int init_flag;
-		/*****function******/
+		int init_flag;    //to assign initial flag 
+
+		std::vector<int> inv_flag;
+		/*****main function******/
 		void gic_initialization ();
 
 		bool gic_check ();
@@ -29,6 +31,9 @@ namespace gic
 		bool forward_gic_check ();
 
 		bool backward_gic_check ();
+
+
+		/*****helper function******/
 
 		inline bool sat_solve (State* s, int bad) {
 			stats_->count_main_solver_SAT_time_start ();
@@ -65,8 +70,9 @@ namespace gic
 
 		Assignment& get_partial (State* t);
 		
-		int get_init_flag ();
-			
+		void inv_push(Cube& uc);
+
+		void inv_push(int bad);
 	};
 
 

@@ -156,10 +156,10 @@ namespace gic{
 		if (forward_){
 			assert (inv_solver_ != NULL);
 			uc.insert (uc.begin(), inv_solver_->get_flag ());
-			inv_.push_back (uc);
+			inv_push (uc);
 		}
 		else
-			inv_.push_back (bad_);
+			inv_push (bad_);
 	}
 	
 	bool Gic::invariant_check(){
@@ -200,12 +200,12 @@ namespace gic{
 			inv_.clear();
 			assert (inv_solver_ != NULL);
 			uc.insert (uc.begin(), inv_solver_->get_flag ());
-			inv_.push_back (uc);
+			inv_push (uc);
 			//not finished
 		}
 		else{
 			inv_.clear ();
-			inv_.push_back (bad_);
+			inv_push (bad_);
 		}
 		//MORE efficient algorithm is NEEDED!
 	}
@@ -213,7 +213,7 @@ namespace gic{
 	void Gic::update_invariant (Cube uc){
 		assert (inv_solver_ != NULL);
 		uc.insert (uc.begin(), inv_solver_->get_flag ());
-		inv_.push_back (uc);
+		inv_push (uc);
 	}
 	
 	void Gic::update_bad (State* t) {
@@ -221,6 +221,25 @@ namespace gic{
 		add_bad_to_solver (t->s()); 
 	}
 	
+	void Gic::inv_push(Cube& uc){
+		inv_flag.push_back(uc[0]);
+		inv_.push_back(uc);
+		Clause temp;
+		auto it = uc.begin();
+		it++;
+		for (;it != uc.end();it++)
+			temp.push_back (model_->prime(-(*it)));
+		inv_solver_->add_clause(temp);     //add !uc as clause to solver
+	}
+
+	void Gic::inv_push(int bad){
+		Clause temp;
+		temp.push_back(inv_solver_->get_flag ());
+		temp.push_back(-bad);
+		inv_solver_->add_clause(temp);     //add !uc as clause to solver
+	}
+
+
 	void Gic::add_bad_to_solver (Cube& st){
 		int flag = solver_->get_flag ();
 		int new_bad = solver_->get_flag ();
@@ -273,7 +292,4 @@ namespace gic{
 		return get_uc (); 
 	}
 	
-	int get_init_flag (){
-		
-	}
 }	
