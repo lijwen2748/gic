@@ -55,7 +55,20 @@ namespace gic{
 	}
 	
 	void Gic::gic_initialization (){
+		
+		
 
+
+		init_flag = solver->get_flag();
+		Clause& tmp;
+		tmp.push_back (init_flag);
+		for (auto it = init_->s().begin();it != init_->s().end();it++){
+			tmp.push_back (-(*st));
+			solver_->add_clause (-init_flag, *it);
+		}
+		solver_->add_clause (tmp);
+		set_init_flag (init_flag);
+		//initialize init_ to a new_flag and add equivlance 
 	}
 
 	bool Gic::gic_check (){
@@ -235,7 +248,7 @@ namespace gic{
 	void Gic::inv_push(int bad){
 		Clause temp;
 		temp.push_back(inv_solver_->get_flag ());
-		temp.push_back(-bad);
+		temp.push_back(-(bad->s())[0]);     //?unsure
 		inv_solver_->add_clause(temp);     //add !uc as clause to solver
 	}
 
@@ -261,7 +274,7 @@ namespace gic{
 	void Gic::add_init_to_solver (Cube& st){
 		int flag = solver_->get_flag ();
 		int new_init = solver_->get_flag ();
-		int init_flag = get_init_flag (); //to be done
+		//int init_flag = get_init_flag (); //done in initialization, need to add equivalence of init_flag and init_
 		set_init_flag (new_init);
 		
 		solver_->add_equivalence (-new_init, -init_flag, -flag);
@@ -273,7 +286,11 @@ namespace gic{
 		}
 		solver_->add_clause (tmp);
 	}
-	
+
+	void set_init_flag (new_init){
+		init_->s().clear();
+		init_->s().push_back(new_init);
+	}
 	State* Gic::get_new_state (){
 		Assignment st = inv_solver_->get_state (forward_);
 		std::pair<Assignment, Assignment> pa = state_pair (st);

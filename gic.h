@@ -73,6 +73,8 @@ namespace gic
 		void inv_push(Cube& uc);
 
 		void inv_push(int bad);
+
+		void set_init_flag (int new_init);
 	};
 
 
