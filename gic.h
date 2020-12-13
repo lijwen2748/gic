@@ -20,7 +20,7 @@ namespace gic
 
 		typedef std::vector<int> Assignment;
 
-		int init_flag;    //to assign initial flag 
+		int init_flag_;    //only backward
 
 		std::vector<int> inv_flag;
 		/*****main function******/
@@ -74,7 +74,6 @@ namespace gic
 
 		void inv_push(int bad);
 
-		void set_init_flag (int new_init);
 	};
 
 
