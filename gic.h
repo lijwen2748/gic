@@ -15,9 +15,18 @@ namespace gic
 	protected:
 		/*****data structure******/
 		typedef vector<int> Cube;
-		vector<Cube> inv_;
+
+		std::vector<Cube> inv_;
+
+		typedef std::vector<int> Assignment;
 
 		/*****function******/
+		bool gic_check ();
+
+		bool forward_gic_check ();
+
+		bool backward_gic_check ();
+
 		inline bool sat_solve (State* s, int bad) {
 			stats_->count_main_solver_SAT_time_start ();
 	        bool res = solver_->solve_with_assumption (s->s(), bad);
@@ -30,6 +39,28 @@ namespace gic
 		bool invariant_check();
 
 		Cube& get_uc (); 
+
+		void initialize_invariant (Cube uc);
+
+		bool invariant_check();
+
+		Assignment& inv_prime (Assignment& cu);
+
+		void renew_invariant (Cube uc);
+
+		void update_invariant (Cube uc);
+
+		void update_bad (State* t);
+
+		void add_bad_to_solver (Cube& st);
+
+		void update_init (State* t);
+
+		void add_init_to_solver (Cube& st);
+
+		State* get_new_state ();
+
+		Assignment& get_partial (State* t);
 		
 			
 	};
