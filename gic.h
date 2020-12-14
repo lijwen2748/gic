@@ -75,7 +75,7 @@ namespace gic
 
 		void gic_initialization ();
 
-		void car_finalization ();	
+		void gic_finalization ();	
 
 		bool sat_solve (State* start, State* next);
 		

@@ -155,7 +155,7 @@ namespace gic{
 		}
 	}
 
-	void Gic::car_finalization (){
+	void Gic::gic_finalization (){
 		if (solver_ != NULL) {
 	        delete solver_;
 	        solver_ = NULL;
