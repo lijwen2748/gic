@@ -1,3 +1,10 @@
+#include "gic.h"
+#include <vector>
+#include <iostream>
+#include "utility.h"
+#include "statistics.h"
+using namespace std;
+
 
 namespace gic{
 
@@ -54,22 +61,6 @@ namespace gic{
 	    return res;
 	}
 	
-	void Gic::gic_initialization (){
-		
-		
-
-		if(!forward_){
-			init_flag_ = solver->get_flag();
-			Clause& tmp;
-			tmp.push_back (init_flag_);
-			for (auto it = init_->s().begin();it != init_->s().end();it++){
-				tmp.push_back (-(*st));
-				solver_->add_clause (-init_flag_, *it);
-			}
-			solver_->add_clause (tmp);
-			//initialize init_ to a new_flag and add equivlance 
-		}
-	}
 
 	bool Gic::gic_check (){
 		if (verbose_)
@@ -131,6 +122,50 @@ namespace gic{
 	
 	
 	/***********************help function****************************/
+	Gic::Gic (Model* model, Statistics& stats, std::ofstream* dot, bool forward = true, bool evidence = false, bool verbose = false){
+		model_ = model;
+		stats_ = &stats;
+		dot_ = dot;
+		solver_ = NULL;
+		inv_solver_ = NULL;
+		init_ = new State (model_->init ());
+		forward_ = forward;
+		evidence_ = evidence;
+		verbose_ = verbose;
+		solver_call_counter_ = 0;
+		inv_solver_call_counter_ = 0; 
+		init_flag_ = 0;
+	}
+
+
+	void Gic::gic_initialization (){
+		solver_ = new MainSolver (model_, stats_,verbose_);
+		inv_solver_ = new InvSolver (model_, verbose_);
+		
+		if(!forward_){
+			init_flag_ = solver->get_flag();
+			Clause& tmp;
+			tmp.push_back (init_flag_);
+			for (auto it = init_->s().begin();it != init_->s().end();it++){
+				tmp.push_back (-(*st));
+				solver_->add_clause (-init_flag_, *it);
+			}
+			solver_->add_clause (tmp);
+			//initialize init_ to a new_flag and add equivlance 
+		}
+	}
+
+	void Gic::car_finalization (){
+		if (solver_ != NULL) {
+	        delete solver_;
+	        solver_ = NULL;
+	    }
+	    if (inv_solver_ != NULL) {
+	        delete inv_solver_;
+	        inv_solver_ = NULL;
+	    }
+	}
+
 	bool Gic::sat_solve (State* start, State* next){
 		Cube assumption = start->s();
 		Cube& s = next->s();
@@ -215,7 +250,7 @@ namespace gic{
 
 	void Gic::renew_invariant (Cube uc){
 		if (forward_){
-			invsolver_add_flag_assumption ();
+			invsolver_add_flag_assumption ();   
 			inv_.clear();
 			assert (inv_solver_ != NULL);
 			inv_push (uc);
@@ -230,7 +265,7 @@ namespace gic{
 		}
 		//MORE efficient algorithm is NEEDED!
 	}
-
+	/*add flag assumption to decide which clause works*/
 	void Gic::invsolver_add_flag_assumption (){
 		if(forward_){
 			for (auto it = inv_.begin();it != inv_.end();it++){

@@ -1,5 +1,18 @@
- #ifndef CHECKER_H
- #define CHECKER_H
+ #ifndef GIC_H
+ #define GIC_H
+
+ 
+#include "data_structure.h"
+#include "invsolver.h"
+#include "startsolver.h"
+#include "mainsolver.h"
+#include "model.h"
+#include <assert.h>
+#include "utility.h"
+#include "statistics.h"
+#include <fstream>
+#include <algorithm>
+
 
 namespace gic
 {
@@ -10,24 +23,31 @@ namespace gic
 		~Gic ();
 		
 		bool check (std::ofstream&);
-		void print_evidence (std::ofstream&);
+		void print_evidence (std::ofstream&); //to be done
 		
 	protected:
 		/*****data structure******/
-		typedef vector<int> Cube;
-
+		//flag
+		bool forward_;
+		bool evidence_;
+		bool verbose_;
+		//varialbes related to flag in inv_
+		int init_flag_;    //initialize initial state to a flag, only backward
 		std::vector<Cube> inv_;
 
-		typedef std::vector<int> Assignment;
+		//members
+		Statistics *stats_;
+		std::ofstream* dot_; //for dot file
+		int solver_call_counter_; //counter for solver_ calls
+		int start_solver_call_counter_; //counter for inv_solver_ calls
 
-		typedef std::vector<int> Clause;
-
-		int init_flag_;    //only backward
-
-		//std::vector<int> inv_flag_vector_; //store the flag of deleted inv_flag
+		State* init_;  // initial state
+		int bad_;
+		Model* model_;
+		MainSolver *solver_;
+		InvSolver *inv_solver_;
 
 		/*****main function******/
-		void gic_initialization ();
 
 		bool gic_check ();
 
@@ -35,8 +55,15 @@ namespace gic
 
 		bool backward_gic_check ();
 
+		/*inline function*/
+		inline void create_inv_solver (){
+			inv_solver_ = new InvSolver (model_, verbose_);
+		}
 
-		/*****helper function******/
+		inline void delete_inv_solver (){
+			delete inv_solver_;
+			inv_solver_ = NULL;
+		}
 
 		inline bool sat_solve (State* s, int bad) {
 			stats_->count_main_solver_SAT_time_start ();
@@ -44,9 +71,16 @@ namespace gic
 	        stats_->count_main_solver_SAT_time_end ();
 	        return res;
 		}
-		
+		/*****helper function******/
+
+		void gic_initialization ();
+
+		void car_finalization ();	
+
 		bool sat_solve (State* start, State* next);
 		
+		bool sat_solve (int init_flag, State* next);
+
 		bool invariant_check();
 
 		Cube& get_uc (); 
@@ -73,7 +107,7 @@ namespace gic
 
 		Assignment& get_partial (State* t);
 		
-		void inv_push(Cube& uc);
+		void inv_push(Cube uc);
 
 		void inv_push(int bad);
 
