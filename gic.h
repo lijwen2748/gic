@@ -77,9 +77,13 @@ namespace gic
 
 		void gic_finalization ();	
 
+		bool immediate_satisfiable ();
+
 		bool sat_solve (State* start, State* next);
 		
 		bool sat_solve (int init_flag, State* next);
+
+		bool sat_solve (Cube& s, int bad);
 
 		bool invariant_check();
 

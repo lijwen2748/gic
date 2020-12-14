@@ -166,6 +166,24 @@ namespace gic{
 	    }
 	}
 
+	bool Gic::immediate_satisfiable ()
+	{
+	    bool res = sat_solve (init_->s (), bad_);
+	    /*if (res)
+	    {
+	        Assignment st = solver_->get_model ();
+	        std::pair<Assignment, Assignment> pa = state_pair (st);
+	        if (forward_)
+	            init_->set_inputs (pa.first);
+	        else
+	            last_ = new State (NULL, pa.first, pa.second, forward_, true);
+	        
+	        return true;
+	    }*/
+
+	    return res;
+	}
+
 	bool Gic::sat_solve (State* start, State* next){
 		Cube assumption = start->s();
 		Cube& s = next->s();
@@ -191,6 +209,17 @@ namespace gic{
 	    return res;
 	}
 
+	bool Gic::sat_solve (Cube& s, int bad){
+		Cube assumption;
+		assumption.push_back(bad);
+		for (int i = 0; i < s.size (); ++i){
+			assumption.push_back (s[i]);
+		}
+		stats_->count_main_solver_SAT_time_start ();
+	    bool res = solver_->solve_with_assumption (assumption); //to be done
+	    stats_->count_main_solver_SAT_time_end ();
+	    return res;
+	}
 
 	Cube& Gic::get_uc () {
 		Cube uc = solver_->get_uc ();
