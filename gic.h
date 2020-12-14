@@ -20,9 +20,12 @@ namespace gic
 
 		typedef std::vector<int> Assignment;
 
+		typedef std::vector<int> Clause;
+
 		int init_flag_;    //only backward
 
-		std::vector<int> inv_flag;
+		//std::vector<int> inv_flag_vector_; //store the flag of deleted inv_flag
+
 		/*****main function******/
 		void gic_initialization ();
 
@@ -73,6 +76,8 @@ namespace gic
 		void inv_push(Cube& uc);
 
 		void inv_push(int bad);
+
+		void invsolver_add_flag_assumption ();
 
 	};
 

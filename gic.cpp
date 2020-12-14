@@ -91,18 +91,18 @@ namespace gic{
 			return true;
 		initialize_invariant (get_uc ());  
 					
-		while (!invariant_check ()){ //  C /\ T /\ \neg C', to be done
+		while (!invariant_check ()){ //  C /\ T /\ \neg C'
 		    
-		    State* t = get_new_state (); //get assignment in \neg C', to be done
+		    State* t = get_new_state (); //get assignment in \neg C'
 		    if (sat_solve (t, bad_)){
-		    	Assignment& partial_t = get_partial (t); //to be done
-		    	update_bad (partial_t);      //to be done
+		    	Assignment& partial_t = get_partial (t); 
+		    	update_bad (partial_t);      
 		    	if (sat_solve (init_, bad_))
 		    		return true;
-		    	renew_invariant (get_uc ()); //two different implementations, to be done
+		    	renew_invariant (get_uc ()); //two different implementations
 		    }
 		    else
-		    	update_invariant (get_uc ())  //to be done
+		    	update_invariant (get_uc ())  
 		}
 		return false;
 	}
@@ -112,18 +112,18 @@ namespace gic{
 			return true;
 		initialize_invariant (get_uc ());  
 					
-		while (!invariant_check ()){ //  /neg C /\ T /\ C', to be done
+		while (!invariant_check ()){ //  /neg C /\ T /\ C'
 		    
-		    State* t = get_new_state (); //get assignment in /neg C,to be done
+		    State* t = get_new_state (); //get assignment in /neg C
 		    if (sat_solve (init_flag_, t)){
-		    	Assignment& partial_t = get_partial (t); //to be done
-		    	update_init (partial_t);      //to be done
+		    	Assignment& partial_t = get_partial (t); 
+		    	update_init (partial_t);     
 		    	if (sat_solve (init_flag_, bad_))
 		    		return true;
-		    	renew_invariant (bad_); //two different implementations, to be done
+		    	renew_invariant (bad_); //two different implementations
 		    }
 		    else
-		    	update_invariant (get_uc ())  //to be done
+		    	update_invariant (get_uc ())  
 		}
 		return false;
 	}
@@ -174,8 +174,7 @@ namespace gic{
 		assert (inv_.size () == 0);
 		if (forward_){
 			assert (inv_solver_ != NULL);
-			uc.insert (uc.begin(), inv_solver_->get_flag ());
-			inv_push (uc);
+			inv_push (uc,inv_solver_->get_flag ());
 		}
 		else
 			inv_push (bad_);
@@ -216,22 +215,41 @@ namespace gic{
 
 	void Gic::renew_invariant (Cube uc){
 		if (forward_){
+			invsolver_add_flag_assumption ();
 			inv_.clear();
 			assert (inv_solver_ != NULL);
-			uc.insert (uc.begin(), inv_solver_->get_flag ());
 			inv_push (uc);
-			//not finished
+			
 		}
 		else{
+			invsolver_add_flag_assumption ();
+			Cube temp;
+			temp = inv_[0];
 			inv_.clear ();
-			inv_push (bad_);
+			inv_.push_back(temp);
 		}
 		//MORE efficient algorithm is NEEDED!
 	}
-	
+
+	void Gic::invsolver_add_flag_assumption (){
+		if(forward_){
+			for (auto it = inv_.begin();it != inv_.end();it++){
+				inv_solver_.flag_assumption.push_back(-(*it)[0]);
+			}
+		}
+		else{
+			auto it = inv_.begin();
+			it++;
+			for (;it != inv_.end();it++){
+				inv_solver_.flag_assumption.push_back(-(*it)[0]);
+			}
+		}
+		
+	}
+
+
 	void Gic::update_invariant (Cube uc){
 		assert (inv_solver_ != NULL);
-		uc.insert (uc.begin(), inv_solver_->get_flag ());
 		inv_push (uc);
 	}
 	
@@ -240,20 +258,27 @@ namespace gic{
 		add_bad_to_solver (t->s()); 
 	}
 	
-	void Gic::inv_push(Cube& uc){
-		inv_flag.push_back(uc[0]);
+	void Gic::inv_push(Cube uc){
+		uc.insert (uc.begin(), inv_solver_->get_flag ());
 		inv_.push_back(uc);
 		Clause temp;
+		temp.push_back(-uc[0]);
 		auto it = uc.begin();
 		it++;
-		for (;it != uc.end();it++)
-			temp.push_back (model_->prime(-(*it)));//forward
+		if (forward_){
+			for (;it != uc.end();it++)
+				temp.push_back (model_->prime(-(*it)));//forward
+		}
+		else{
+			for (;it != uc.end();it++)
+				temp.push_back (-(*it));//backward
+		}
 		inv_solver_->add_clause(temp);     //add !uc as clause to solver
 	}
 
 	void Gic::inv_push(int bad){
 		Clause temp;
-		temp.push_back(inv_solver_->get_flag ());
+		temp.push_back(-inv_solver_->get_flag ());
 		temp.push_back(-bad);     //?unsure
 		inv_solver_->add_clause(temp);     //add !uc as clause to solver
 	}
@@ -280,7 +305,6 @@ namespace gic{
 	void Gic::add_init_to_solver (Cube& st){
 		int flag = solver_->get_flag ();
 		int new_init = solver_->get_flag ();
-		//int init_flag = get_init_flag (); //done in initialization, need to add equivalence of init_flag and init_
 		init_flag_ = new_init;
 		
 		solver_->add_equivalence (-new_init, -init_flag_, -flag);
