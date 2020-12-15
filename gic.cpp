@@ -73,8 +73,8 @@ namespace gic{
 		
 		if (forward_) 
 			return forward_gic_check ();
-		else 
-			return backward_gic_check ();
+		// else 
+		// 	return backward_gic_check ();
 	}
 	
 	bool Gic::forward_gic_check (){
@@ -98,26 +98,26 @@ namespace gic{
 		return false;
 	}
 	
-	bool Gic::backward_gic_check (){
-		if (sat_solve (init_flag_, bad_))  
-			return true;
-		initialize_invariant (get_uc ());  
+	// bool Gic::backward_gic_check (){
+	// 	if (sat_solve (init_flag_, bad_))  
+	// 		return true;
+	// 	initialize_invariant (get_uc ());  
 					
-		while (!invariant_check ()){ //  /neg C /\ T /\ C'
+	// 	while (!invariant_check ()){ //  /neg C /\ T /\ C'
 		    
-		    State* t = get_new_state (); //get assignment in /neg C
-		    if (sat_solve (init_flag_, t)){
-		    	Assignment& partial_t = get_partial (t); 
-		    	update_init (partial_t);     
-		    	if (sat_solve (init_flag_, bad_))
-		    		return true;
-		    	renew_invariant (bad_); //two different implementations
-		    }
-		    else
-		    	update_invariant (get_uc ())  
-		}
-		return false;
-	}
+	// 	    State* t = get_new_state (); //get assignment in /neg C
+	// 	    if (sat_solve (init_flag_, t)){
+	// 	    	Assignment& partial_t = get_partial (t); 
+	// 	    	update_init (partial_t);     
+	// 	    	if (sat_solve (init_flag_, bad_))
+	// 	    		return true;
+	// 	    	renew_invariant (bad_); //two different implementations
+	// 	    }
+	// 	    else
+	// 	    	update_invariant (get_uc ())  
+	// 	}
+	// 	return false;
+	// }
 	
 	
 	
@@ -140,17 +140,17 @@ namespace gic{
 		solver_ = new MainSolver (model_, stats_,verbose_);
 		inv_solver_ = new InvSolver (model_, verbose_);
 		
-		if(!forward_){
-			init_flag_ = solver->get_flag();
-			Clause& tmp;
-			tmp.push_back (init_flag_);
-			for (auto it = init_->s().begin();it != init_->s().end();it++){
-				tmp.push_back (-(*st));
-				solver_->add_clause (-init_flag_, *it);
-			}
-			solver_->add_clause (tmp);
-			//initialize init_ to a new_flag and add equivlance 
-		}
+		// if(!forward_){
+		// 	init_flag_ = solver->get_flag();
+		// 	Clause& tmp;
+		// 	tmp.push_back (init_flag_);
+		// 	for (auto it = init_->s().begin();it != init_->s().end();it++){
+		// 		tmp.push_back (-(*st));
+		// 		solver_->add_clause (-init_flag_, *it);
+		// 	}
+		// 	solver_->add_clause (tmp);
+		// 	//initialize init_ to a new_flag and add equivlance 
+		// }
 	}
 
 	void Gic::gic_finalization (){
@@ -236,9 +236,9 @@ namespace gic{
 			assert (inv_solver_ != NULL);
 			inv_push (uc,inv_solver_->get_flag ());
 		}
-		else{
-			//inv_push (bad_);/*do not push bad_ to inv_, it is by default that bad_ is in inv_ for backward*/
-		}
+		// else{
+		// 	//inv_push (bad_);/*do not push bad_ to inv_, it is by default that bad_ is in inv_ for backward*/
+		// }
 	}
 	
 	bool Gic::invariant_check(){
@@ -251,15 +251,15 @@ namespace gic{
 			}
 			return true;
 		}
-		else{
-		/*
-			for (auto it = inv_.begin(); it != inv_.end()); ++it){
-				if (inv_solver_->solve_with_assumption (inv_prime (*it))) //to be done
-					return false;
-			}
-			return true;
-			*/
-		}
+		// else{
+		// /*
+		// 	for (auto it = inv_.begin(); it != inv_.end()); ++it){
+		// 		if (inv_solver_->solve_with_assumption (inv_prime (*it))) //to be done
+		// 			return false;
+		// 	}
+		// 	return true;
+		// 	*/
+		// }
 		return false;
 	}
 	
@@ -281,15 +281,15 @@ namespace gic{
 			inv_push (uc);
 			
 		}
-		else{
-		/*
-			invsolver_add_flag_assumption ();
-			Cube temp;
-			temp = inv_[0];
-			inv_.clear ();
-			inv_.push_back(temp);
-			*/
-		}
+		// else{
+		// /*
+		// 	invsolver_add_flag_assumption ();
+		// 	Cube temp;
+		// 	temp = inv_[0];
+		// 	inv_.clear ();
+		// 	inv_.push_back(temp);
+		// 	*/
+		// }
 		//MORE efficient algorithm is NEEDED!
 	}
 	/*add flag assumption to decide which clause works*/
@@ -299,13 +299,13 @@ namespace gic{
 				inv_solver_.flag_assumption.push_back(-(*it)[0]);
 			}
 		}
-		else{
-			auto it = inv_.begin();
-			it++;
-			for (;it != inv_.end();it++){
-				inv_solver_.flag_assumption.push_back(-(*it)[0]);
-			}
-		}
+		// else{
+		// 	auto it = inv_.begin();
+		// 	it++;
+		// 	for (;it != inv_.end();it++){
+		// 		inv_solver_.flag_assumption.push_back(-(*it)[0]);
+		// 	}
+		// }
 		
 	}
 
@@ -331,10 +331,10 @@ namespace gic{
 			for (;it != uc.end();it++)
 				temp.push_back (model_->prime(-(*it)));//forward
 		}
-		else{
-			for (;it != uc.end();it++)
-				temp.push_back (-(*it));//backward
-		}
+		// else{
+		// 	for (;it != uc.end();it++)
+		// 		temp.push_back (-(*it));//backward
+		// }
 		inv_solver_->add_clause(temp);     //add !uc as clause to solver
 	}
 
@@ -391,9 +391,9 @@ namespace gic{
 		if (forward_){
 			assert (!sat_solve (t->all(), -bad));
 		}
-		else{
-			return t->s ();
-		}	
+		// else{
+		// 	return t->s ();
+		// }	
 		return get_uc (); 
 	}
 	
