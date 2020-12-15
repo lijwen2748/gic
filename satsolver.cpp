@@ -16,13 +16,13 @@
 */
 
 /* 
- * File:   carsolver.cpp
+ * File:   satsolver.cpp
  * Author: Jianwen Li
  * Note: An inheritance class from Minisat::Solver for CAR use 
  * Created on October 4, 2017
  */
  
-#include "carsolver.h"
+#include "satsolver.h"
 #include <iostream>
 #include <vector>
 using namespace std;
@@ -32,10 +32,10 @@ using namespace Minisat;
 //using namespace Glucose;
 #endif
 
-namespace car
+namespace gic
 {
  	#ifdef ENABLE_PICOSAT
- 	int CARSolver::SAT_lit (int id) {
+ 	int SATSolver::SAT_lit (int id) {
  	    assert (id != 0);
  	    while (abs (id) > picosat_variables (picosat_)) {
  	        picosat_inc_max_var (picosat_);
@@ -43,11 +43,11 @@ namespace car
  	    return id;
  	}
  	
- 	int CARSolver::lit_id (int id) {
+ 	int SATSolver::lit_id (int id) {
  	    return id;
  	}
  	
- 	bool CARSolver::solve_assumption () {
+ 	bool SATSolver::solve_assumption () {
  		for (int i = 0; i < assumption_.size (); i ++) {
  			picosat_assume (picosat_, assumption_[i]);
  		}
@@ -56,7 +56,7 @@ namespace car
  	}
  	
  	//return the model from SAT solver when it provides SAT
-	std::vector<int> CARSolver::get_model () {
+	std::vector<int> SATSolver::get_model () {
 	    vector<int> res;
 	    int max_var = picosat_variables (picosat_);
 	    res.resize (max_var, 0);
@@ -72,7 +72,7 @@ namespace car
 	}
 	
 	//return the UC from SAT solver when it provides UNSAT
- 	std::vector<int> CARSolver::get_uc () {
+ 	std::vector<int> SATSolver::get_uc () {
  		std::vector<int> reason;
 		if (verbose_)
 			cout << "get uc: \n";
@@ -90,7 +90,7 @@ namespace car
     	return reason;
   	}
 	
-	void CARSolver::add_clause (std::vector<int>& v) {
+	void SATSolver::add_clause (std::vector<int>& v) {
 	    for (int i = 0; i < v.size(); i ++) {
             picosat_add(picosat_, v[i]);
         }
@@ -100,7 +100,7 @@ namespace car
  	
  	#else
  	
- 	Lit CARSolver::SAT_lit (int id)
+ 	Lit SATSolver::SAT_lit (int id)
  	{
  		assert (id != 0);
         int var = abs(id)-1;
@@ -108,7 +108,7 @@ namespace car
         return ( (id > 0) ? mkLit(var) : ~mkLit(var) );
  	}
  	
- 	int CARSolver::lit_id (Lit l)
+ 	int SATSolver::lit_id (Lit l)
     {
     	if (sign(l)) 
             return -(var(l) + 1);
@@ -116,7 +116,7 @@ namespace car
             return var(l) + 1;
     }
  	
- 	bool CARSolver::solve_assumption ()
+ 	bool SATSolver::solve_assumption ()
 	{
 		lbool ret = solveLimited (assumption_);
 		if (verbose_)
@@ -134,7 +134,7 @@ namespace car
 	}
 	
 	//return the model from SAT solver when it provides SAT
-	std::vector<int> CARSolver::get_model ()
+	std::vector<int>& SATSolver::get_model ()
 	{
 		std::vector<int> res;
 		res.resize (nVars (), 0);
@@ -149,7 +149,7 @@ namespace car
 	}
 	
 	//return the UC from SAT solver when it provides UNSAT
- 	std::vector<int> CARSolver::get_uc ()
+ 	std::vector<int>& SATSolver::get_uc ()
  	{
  		std::vector<int> reason;
 		if (verbose_)
@@ -166,7 +166,7 @@ namespace car
     	return reason;
   	}
 	
-	void CARSolver::add_clause (std::vector<int>& v)
+	void SATSolver::add_clause (std::vector<int>& v)
  	{
  		vec<Lit> lits;
  		for (std::vector<int>::iterator it = v.begin (); it != v.end (); it ++)
@@ -190,14 +190,14 @@ namespace car
  	
  	#endif
  	
- 	void CARSolver::add_clause (int id)
+ 	void SATSolver::add_clause (int id)
  	{
  		std::vector<int> v;
  		v.push_back (id);
  		add_clause (v);
  	}
  	
- 	void CARSolver::add_clause (int id1, int id2)
+ 	void SATSolver::add_clause (int id1, int id2)
  	{
  		std::vector<int> v;
  		v.push_back (id1);
@@ -205,7 +205,7 @@ namespace car
  		add_clause (v);
  	}
  	
- 	void CARSolver::add_clause (int id1, int id2, int id3)
+ 	void SATSolver::add_clause (int id1, int id2, int id3)
  	{
  		std::vector<int> v;
  		v.push_back (id1);
@@ -214,7 +214,7 @@ namespace car
  		add_clause (v);
  	}
  	
- 	void CARSolver::add_clause (int id1, int id2, int id3, int id4)
+ 	void SATSolver::add_clause (int id1, int id2, int id3, int id4)
  	{
  		std::vector<int> v;
  		v.push_back (id1);
@@ -224,13 +224,13 @@ namespace car
  		add_clause (v);
  	}
  	
- 	void CARSolver::add_cube (const std::vector<int>& cu)
+ 	void SATSolver::add_cube (const std::vector<int>& cu)
  	{
  	    for (int i = 0; i < cu.size (); i ++)
  	        add_clause (cu[i]);
  	}
  	
- 	void CARSolver::add_clause_from_cube (const std::vector<int>& cu)
+ 	void SATSolver::add_clause_from_cube (const std::vector<int>& cu)
  	{
  	    vector<int> v;
  	    for (int i = 0; i < cu.size (); i ++)
@@ -238,7 +238,7 @@ namespace car
  	    add_clause (v);
  	}
  	
- 	void CARSolver::print_clauses ()
+ 	void SATSolver::print_clauses ()
 	{
 		#ifndef ENABLE_PICOSAT
 		cout << "clauses in SAT solver: \n";
@@ -252,7 +252,7 @@ namespace car
 		#endif
 	}
 	
-	void CARSolver::print_assumption ()
+	void SATSolver::print_assumption ()
 	{
 	    cout << "assumptions in SAT solver: \n";
 	    for (int i = 0; i < assumption_.size (); i ++)

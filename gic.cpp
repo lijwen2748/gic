@@ -86,6 +86,7 @@ namespace gic{
 		    
 		    State* t = get_new_state (); //get assignment in \neg C'
 		    if (sat_solve (t, bad_)){
+		    	solver_->update_state_input (t->input());
 		    	Assignment& partial_t = get_partial (t); 
 		    	update_bad (partial_t);      
 		    	if (sat_solve (init_, bad_))

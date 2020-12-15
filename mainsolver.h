@@ -18,13 +18,13 @@
 /*
 	Author: Jianwen Li
 	Update Date: October 6, 2017
-	Main Solver in CAR
+	Main Solver in GIC
 */
 
 #ifndef MAIN_SOLVER_H
 #define MAIN_SOLVER_H
 
-#include "carsolver.h"
+#include "satsolver.h"
 #include "data_structure.h"
 #include "model.h"
 #include "statistics.h"
@@ -34,81 +34,39 @@
 
 namespace car{
 
-class MainSolver : public CARSolver 
+class MainSolver : public SATSolver 
 {
 	public:
 		MainSolver (Model*, Statistics* stats, const bool verbose = false);
 		~MainSolver (){}
 		
-		//public funcitons
-		void set_assumption (const Assignment&, const int frame_level, const bool forward);
-		void set_assumption (const Assignment&, const int);
 		
-		
-		inline bool solve_with_assumption (const Assignment& st, const int p)
+		inline bool solve_with_assumption (const Assignment& st)
 		{
-		    set_assumption (st, p);
-		    if (verbose_)
-		    	std::cout << "MainSolver::";
-		    return solve_assumption ();
+			return solve_assumption (st);
 		}
 		
-		inline bool solve_with_assumption ()
-		{
-			if (verbose_)
-		    	std::cout << "MainSolver::";
-		    return solve_assumption ();
-		}
+		void update_state_input (Assignment& inputs);
 		
-		Assignment get_state (const bool forward = true, const bool partial = false);
-		
-		//this version is used for bad check only
-		Cube get_conflict (const int bad);
-		Cube get_conflict (const bool forward, const bool minimal, bool& constraint);
-		
-		void add_new_frame (const Frame& frame, const int frame_level, const bool forward);
-		//overload
-		void add_clause_from_cube (const Cube& cu, const int frame_level, const bool forward_);
-		
-		inline void update_constraint (Cube& cu)
-		{
-		    CARSolver::add_clause_from_cube (cu);
-		}
-		
-		inline static void clear_frame_flags () {frame_flags_.clear ();}
-
 		inline int get_flag() {
-				current_flag++;
-				return current_flag;
+				max_flag++;
+				return max_flag;
 			}
 		
 	private:
 		//members
-		static int max_flag_;
-		static std::vector<int> frame_flags_;
+		int max_flag_;
 		
 		Model* model_;
 		
 		Statistics* stats_;
 
 		int id_aiger_max_;
-
-		int current_flag;
 		
 		//bool verbose_;
 		
 		//functions
 		
-		inline int flag_of (const unsigned frame_level) 
-		{
-		    assert (frame_level >= 0);
-			while (frame_level >= frame_flags_.size ())
-			{
-				frame_flags_.push_back (max_flag_++);
-			}
-	        
-			return frame_flags_[frame_level];
-		}
 		void shrink_model (Assignment& model, const bool forward, const bool partial);
 		void try_reduce (Cube& cu);
 };

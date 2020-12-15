@@ -16,14 +16,14 @@
 */
 
 /* 
- * File:   carsolver.h
+ * File:   satsolver.h
  * Author: Jianwen Li
  * Note: An inheritance class from Minisat::Solver for CAR use 
  * Created on October 4, 2017
  */
  
-#ifndef CAR_SOLVER_H
-#define	CAR_SOLVER_H
+#ifndef SAT_SOLVER_H
+#define	SAT_SOLVER_H
 
 #ifdef ENABLE_PICOSAT
 extern "C" {
@@ -37,21 +37,21 @@ extern "C" {
 #include <vector>
 #include <assert.h>
 
-namespace car
+namespace gic
 {
     #ifdef ENABLE_PICOSAT
-    class CARSolver 
+    class SATSolver 
     #else
-	class CARSolver : public Minisat::Solver //Glucose:Solver
+	class SATSolver : public Minisat::Solver //Glucose:Solver
 	#endif
 	{
 	public:
 	    #ifdef ENABLE_PICOSAT
-	    CARSolver () { picosat_ = picosat_init(); }
-		CARSolver (bool verbose) : verbose_ (verbose) { picosat_reset(picosat_); } 
+	    SATSolver () { picosat_ = picosat_init(); }
+		SATSolver (bool verbose) : verbose_ (verbose) { picosat_reset(picosat_); } 
 	    #else
-		CARSolver () {}
-		CARSolver (bool verbose) : verbose_ (verbose) {} 
+		SATSolver () {}
+		SATSolver (bool verbose) : verbose_ (verbose) {} 
 		#endif
 		
 		bool verbose_;
@@ -65,8 +65,13 @@ namespace car
 		
 		//functions
 		bool solve_assumption ();
-		std::vector<int> get_model ();    //get the model from SAT solver
- 		std::vector<int> get_uc ();       //get UC from SAT solver
+		inline bool solve_assumption (std::vector<int>& assumption) 
+		{
+			assumption_ = assumption; 
+			return solve_assumption ();
+		}
+		std::vector<int>& get_model ();    //get the model from SAT solver
+ 		std::vector<int>& get_uc ();       //get UC from SAT solver
 		
 		void add_cube (const std::vector<int>&);
 		void add_clause_from_cube (const std::vector<int>&);

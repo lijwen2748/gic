@@ -18,7 +18,7 @@
 /*
 	Author: Jianwen Li
 	Update Date: October 6, 2017
-	Main Solver in CAR
+	Main Solver in GIC
 */
 
 
@@ -28,10 +28,8 @@
 #include <algorithm>
 using namespace std;
 
-namespace car
+namespace gic
 {
-	int MainSolver::max_flag_ = -1;
-	vector<int> MainSolver::frame_flags_;
 	
 	MainSolver::MainSolver (Model* m, Statistics* stats, const bool verbose) : id_aiger_max_ (const_cast<Model*>(m)->max_id ())
 	{
@@ -52,99 +50,26 @@ namespace car
 		current_flag = id_aiger_max_;
 	}
 	
-	void MainSolver::set_assumption (const Assignment& st, const int id)
-	{
-		assumption_.clear ();
-		assumption_push (id);
-		
-		for (Assignment::const_iterator it = st.begin (); it != st.end (); it++)
-		{
-			assumption_push (*it);
-		}		
+	void MainSolver::update_state_input (Assignment& st){
+		Assignment& model = get_model ();
+		for (int i = 0; i < model_->num_inputs (); i ++)
+	    {
+	        if (i >= model.size ())
+	        {//the value is DON'T CARE, so we just set to 0
+	            st.push_back (0);
+	        }
+	        else
+	            st.push_back (model[i]);
+	    }
+	    
 	}
 	
-	void MainSolver::set_assumption (const Assignment& a, const int frame_level, const bool forward)
-	{
-		assumption_.clear ();
-		if (frame_level > -1)
-			assumption_push (flag_of (frame_level));		
-		for (Assignment::const_iterator it = a.begin (); it != a.end (); it ++)
-		{
-			int id = *it;
-			if (forward)
-				assumption_push (model_->prime (id));
-			else
-				assumption_push (id);
-		}
-			
-	}
 	
 	Assignment MainSolver::get_state (const bool forward, const bool partial)
 	{
 		Assignment model = get_model ();
 		shrink_model (model, forward, partial);
 		return model;
-	}
-	
-	//this version is used for bad check only
-	Cube MainSolver::get_conflict (const int bad)
-	{
-		Cube conflict = get_uc ();
-		Cube res;
-		for (int i = 0; i < conflict.size (); i ++)
-		{
-			if (conflict[i] != bad)
-				res.push_back (conflict[i]);
-		}
-		
-		std::sort (res.begin (), res.end (), car::comp);
-		return res;
-	}
-	
-	Cube MainSolver::get_conflict (const bool forward, const bool minimal, bool& constraint)
-	{
-		Cube conflict = get_uc ();
-		
-		if (minimal)
-		{
-			stats_->count_orig_uc_size (int (conflict.size ()));
-			try_reduce (conflict);
-			stats_->count_reduce_uc_size (int (conflict.size ()));
-		}
-		
-			
-		if (forward)
-		    model_->shrink_to_previous_vars (conflict, constraint);
-		else
-		    model_ -> shrink_to_latch_vars (conflict, constraint);
-		
-		
-		std::sort (conflict.begin (), conflict.end (), car::comp);
-		
-		return conflict;
-	}
-	
-	void MainSolver::add_new_frame (const Frame& frame, const int frame_level, const bool forward)
-	{
-		for (int i = 0; i < frame.size (); i ++)
-		{
-			add_clause_from_cube (frame[i], frame_level, forward);
-		}
-	}
-	
-	void MainSolver::add_clause_from_cube (const Cube& cu, const int frame_level, const bool forward)
-	{
-		int flag = flag_of (frame_level);
-		vector<int> cl;
-		cl.push_back (-flag);
-		for (int i = 0; i < cu.size (); i ++)
-		{
-			if (!forward)
-				cl.push_back (-model_->prime (cu[i]));
-			else
-				cl.push_back (-cu[i]);
-		}
-		add_clause (cl);
 	}
 	
 	void MainSolver::shrink_model (Assignment& model, const bool forward, const bool partial)
