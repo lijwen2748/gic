@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include <iostream>
 
-namespace car {
+namespace gic {
 
 class Statistics 
 {

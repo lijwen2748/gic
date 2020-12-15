@@ -64,10 +64,11 @@ namespace gic
 		#endif
 		
 		//functions
+		void set_assumption (std::vector<int>& st);
 		bool solve_assumption ();
 		inline bool solve_assumption (std::vector<int>& assumption) 
 		{
-			assumption_ = assumption; 
+			set_assumption (assumption); 
 			return solve_assumption ();
 		}
 		std::vector<int>& get_model ();    //get the model from SAT solver

@@ -4,7 +4,6 @@
  
 #include "data_structure.h"
 #include "invsolver.h"
-#include "startsolver.h"
 #include "mainsolver.h"
 #include "model.h"
 #include <assert.h>
@@ -20,10 +19,10 @@ namespace gic
 	{
 	public:
 		Gic (Model* model, Statistics& stats, std::ofstream* dot, bool forward = true, bool evidence = false, bool verbose = false);
-		~Gic ();
+		~Gic (){}
 		
 		bool check (std::ofstream&);
-		void print_evidence (std::ofstream&); //to be done
+		inline void print_evidence (std::ofstream&) {} //to be done
 		
 	protected:
 		/*****data structure******/
@@ -41,7 +40,7 @@ namespace gic
 
 		State* init_;  // initial state
 		int bad_;
-		std::vector<State*> bads_;
+		std::vector<Assignment> bads_;
 		std::vector<State*> inits_;
 		Model* model_;
 		MainSolver *solver_;
@@ -84,17 +83,15 @@ namespace gic
 
 		Cube& get_uc (); 
 
-		void initialize_invariant (Cube uc);
-
-		bool invariant_check();
+		void initialize_invariant (Cube& uc);
 
 		Assignment& inv_prime (Assignment& cu);
 
-		void renew_invariant (Cube uc);
+		void renew_invariant (Cube& uc);
 
-		void update_invariant (Cube uc);
+		void update_invariant (Cube& uc);
 
-		void update_bad (State* t);
+		void update_bad (Assignment& t);
 
 		void add_bad_to_solver (Cube& st);
 
@@ -103,6 +100,8 @@ namespace gic
 		void add_init_to_solver (Cube& st);
 
 		State* get_new_state ();
+
+		std::pair<Assignment, Assignment> state_pair (const Assignment& st);
 
 		Assignment& get_partial (State* t);
 		

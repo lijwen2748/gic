@@ -115,7 +115,17 @@ namespace gic
         else 
             return var(l) + 1;
     }
- 	
+
+ 	void SATSolver::set_assumption (std::vector<int>& st)
+	{
+		assumption_.clear ();
+		
+		for (auto it = st.begin (); it != st.end (); it++)
+		{
+			assumption_push (*it);
+		}		
+	}
+
  	bool SATSolver::solve_assumption ()
 	{
 		lbool ret = solveLimited (assumption_);

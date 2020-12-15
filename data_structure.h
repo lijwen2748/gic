@@ -29,7 +29,7 @@
  #include <iostream>
  #include <fstream>
  
- namespace car
+ namespace gic
  {
  	typedef std::vector<int> Assignment;
  	typedef std::vector<int> Cube;
@@ -43,7 +43,8 @@
  	public:
  	    State (const Assignment& latches) : s_ (latches), pre_ (NULL), next_ (NULL) {}
 
- 		State (const State *s, const Assignment& inputs, const Assignment& latches, const bool forward, const bool last = false); 
+ 		State (const Assignment& inputs, const Assignment& latches, const bool forward, const bool last = false); 
+
  		
  		State (State *s): pre_ (s->pre_), next_(s->next_), s_(s->s_), inputs_(s->inputs_), last_inputs_(s->last_inputs_), 
  		init_ (s->init_), id_ (s->id_), dep_ (s->dep_) {}
@@ -92,6 +93,8 @@
 		inline void work_count_inc () {work_count_ ++;}
  		inline int work_count () {return work_count_;}
  		inline int work_count_reset () {work_count_ = 0;}
+
+		inline std::vector<int>& input () {return inputs_;}
  		
  	private:
  	//s_ contains all latches, but if the value of latch l is not cared, assign it to -1.

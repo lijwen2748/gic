@@ -30,7 +30,7 @@
 #include "hash_map.h"
 #include <stdlib.h>
 
-namespace car{
+namespace gic{
 
 void print (const std::vector<int>& v);
 

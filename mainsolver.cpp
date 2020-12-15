@@ -47,7 +47,7 @@ namespace gic
 		//latches
 		for (int i = m->latches_start (); i < m->size (); i ++)
 		    add_clause (m->element (i));
-		current_flag = id_aiger_max_;
+		max_flag_ = id_aiger_max_;
 	}
 	
 	void MainSolver::update_state_input (Assignment& st){
@@ -62,75 +62,6 @@ namespace gic
 	            st.push_back (model[i]);
 	    }
 	    
-	}
-	
-	
-	Assignment MainSolver::get_state (const bool forward, const bool partial)
-	{
-		Assignment model = get_model ();
-		shrink_model (model, forward, partial);
-		return model;
-	}
-	
-	void MainSolver::shrink_model (Assignment& model, const bool forward, const bool partial)
-	{
-	    Assignment res;
-	    
-	    for (int i = 0; i < model_->num_inputs (); i ++)
-	    {
-	        if (i >= model.size ())
-	        {//the value is DON'T CARE, so we just set to 0
-	            res.push_back (0);
-	        }
-	        else
-	            res.push_back (model[i]);
-	    }
-	        
-		if (forward)
-		{
-		    for (int i = model_->num_inputs (); i < model_->num_inputs () + model_->num_latches (); i ++)
-		    {   //the value is DON'T CARE 
-		        if (i >= model.size ())
-		            break;
-		        res.push_back (model[i]);
-		    }
-		    if (partial)
-		    {
-		        //TO BE DONE
-		    }
-		}
-		else
-		{
-		    Assignment tmp;
-		    tmp.resize (model_->num_latches (), 0);
-		    for (int i = model_->num_inputs ()+1; i <= model_->num_inputs () + model_->num_latches (); i ++)
-		    {
-		    	
-		    	int p = model_->prime (i);
-		    	assert (p != 0);
-		    	assert (model.size () > abs (p));
-		    	
-		    	int val = model[abs(p)-1];
-		    	if (p == val)
-		    		tmp[i-model_->num_inputs ()-1] = i;
-		    	else
-		    		tmp[i-model_->num_inputs ()-1] = -i;
-		    }
-		    
-		    		    
-		    for (int i = 0; i < tmp.size (); i ++)
-		        res.push_back (tmp[i]);
-		    if (partial)
-		    {
-		        //TO BE DONE
-		    }
-		}
-		model = res;
-	}
-	
-	void MainSolver::try_reduce (Cube& cu)
-	{
-		
 	}
 	
 	

@@ -22,7 +22,7 @@ namespace gic{
 	    //for the particular case when bad_ is true or false
 	    if (bad_ == model_->true_id ()){
 	    	out << "1" << endl;
-	        out << "b" << i << endl;
+	        out << "b0" << endl;
 	        if (evidence_){
 	        //print init state
 	        	out << init_->latches() << endl;
@@ -51,12 +51,14 @@ namespace gic{
 	    bool res = gic_check ();
 	    if (res)
     		out << "1" << endl;
-   		else
+   	    else
     		out << "0" << endl;
-    	out << "b" << i << endl;
-   		if (evidence_ && res)
+    	    out << "b0"<< endl;
+   	    
+            if (evidence_ && res)
     		print_evidence (out);
-    	out << "." << endl;
+
+    	    out << "." << endl;
 	    gic_finalization ();
 	    return res;
 	}
@@ -94,7 +96,7 @@ namespace gic{
 		    	renew_invariant (get_uc ()); //two different implementations
 		    }
 		    else
-		    	update_invariant (get_uc ())  
+		    	update_invariant (get_uc ()); 
 		}
 		return false;
 	}
@@ -220,7 +222,7 @@ namespace gic{
 
 	Cube& Gic::get_uc () {
 		Cube uc = solver_->get_uc ();
-		int id = foward_ ? bad_ : init_flag_;
+		int id = forward_ ? bad_ : init_flag_;
 		for (auto it = uc.begin(); it != uc.end(); ++it){
 			if (id == *it){
 				uc.erase (it);
@@ -235,7 +237,7 @@ namespace gic{
 		assert (inv_.size () == 0);
 		if (forward_){
 			assert (inv_solver_ != NULL);
-			inv_push (uc,inv_solver_->get_flag ());
+			inv_push (uc);
 		}
 		// else{
 		// 	//inv_push (bad_);/*do not push bad_ to inv_, it is by default that bad_ is in inv_ for backward*/
@@ -246,7 +248,7 @@ namespace gic{
 		assert (inv_solver_ != NULL);
 		
 		if (forward_){
-			for (auto it = inv_.begin(); it != inv_.end()); ++it){
+			for (auto it = inv_.begin(); it != inv_.end(); ++it){
 				if (inv_solver_->solve_with_assumption (*it))
 					return false;  //add flag assumption
 			}
@@ -309,14 +311,14 @@ namespace gic{
 	}
 
 
-	void Gic::update_invariant (Cube uc){
+	void Gic::update_invariant (Cube& uc){
 		assert (inv_solver_ != NULL);
 		inv_push (uc);
 	}
 	
-	void Gic::update_bad (State* t) {
+	void Gic::update_bad (Assignment& t) {
 		bads_.push_back (t);
-		add_bad_to_solver (t->s()); 
+		add_bad_to_solver (t); 
 	}
 	
 	void Gic::inv_push(Cube uc){
@@ -349,10 +351,10 @@ namespace gic{
 		int flag = solver_->get_flag ();
 		int new_bad = solver_->get_flag ();
 		solver_->add_equivalence (-new_bad, -bad_, -flag);
-		Clause& tmp;
+		Clause tmp;
 		tmp.push_back (flag);
 		for (auto it = st.begin (); it != st.end(); ++it){
-			tmp.push_back (-(*st));
+			tmp.push_back (-(*it));
 			solver_->add_clause (-flag, *it);
 		}
 		solver_->add_clause (tmp);
@@ -360,7 +362,7 @@ namespace gic{
 	
 	void Gic::update_init (State* t) {
 		inits_.push_back (t);
-		add_init_to_solver (t); 
+		add_init_to_solver (t->s()); 
 	}
 	
 	void Gic::add_init_to_solver (Cube& st){
@@ -369,31 +371,48 @@ namespace gic{
 		init_flag_ = new_init;
 		
 		solver_->add_equivalence (-new_init, -init_flag_, -flag);
-		Clause& tmp;
+		Clause tmp;
 		tmp.push_back (flag);
 		for (auto it = st.begin (); it != st.end(); ++it){
-			tmp.push_back (-(*st));
+			tmp.push_back (-(*it));
 			solver_->add_clause (-flag, *it);
 		}
 		solver_->add_clause (tmp);
 	}
 
-	State* Gic::get_new_state (State* s){
+	State* Gic::get_new_state (){
 		Assignment st = inv_solver_->get_state (forward_); //to be done
 		std::pair<Assignment, Assignment> pa = state_pair (st);
-		State* res = new State (pa.first, pa.second);
+		State* res = new State (pa.first, pa.second, forward_);
 		
 		return res;
+	}
+
+	std::pair<Assignment, Assignment> Gic::state_pair (const Assignment& st)
+	{
+	    assert (st.size () >= model_->num_inputs () + model_->num_latches ());
+	    Assignment inputs, latches;
+	    for (int i = 0; i < model_->num_inputs (); i ++)
+	        inputs.push_back (st[i]);
+	    for (int i = model_->num_inputs (); i < st.size (); i ++)
+	    {
+	        if (abs (st[i]) > model_->num_inputs () + model_->num_latches ())
+	            break;
+	        latches.push_back (st[i]);
+	    }
+	    return std::pair<Assignment, Assignment> (inputs, latches);
 	}
 	
 	Assignment& Gic::get_partial (State* t){//more than one implementation
 		if (forward_){
-			assert (!sat_solve (t->all(), -bad));
+			Assignment tmp = t->s ();
+			tmp.insert (tmp.begin(), t->input().begin(), t->input().end());
+			assert (!sat_solve (tmp, -bad_));
 		}
 		// else{
 		// 	return t->s ();
 		// }	
-		return get_uc (); 
+		return get_uc (); //pay attention to that if an input var is in the returned UC
 	}
 	
 }	

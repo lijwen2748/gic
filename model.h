@@ -32,7 +32,7 @@ extern "C" {
 #include "hash_set.h"
 #include "data_structure.h"
 
-namespace car {
+namespace gic {
 class Model {
 public:
 	Model (aiger*, const bool verbose = false);

@@ -26,7 +26,7 @@
 #include <algorithm>
 using namespace std;
 
-namespace car {
+namespace gic {
 
 void print (const std::vector<int>& v)
 {

@@ -25,7 +25,7 @@
 #define INV_SOLVER_H
 
 #include "data_structure.h"
-#include "carsolver.h"
+#include "satsolver.h"
 #include "model.h"
 #include <vector>
 
@@ -48,7 +48,7 @@ namespace gic
 				//latches
 				for (int i = m->latches_start (); i < m->size (); i ++)
 				add_clause (m->element (i));
-				current_flag = id_aiger_max_;
+				current_flag_ = id_aiger_max_;
 			}
 			~InvSolver () {;}
 		
@@ -114,11 +114,11 @@ namespace gic
 			inline int new_var () {return ++id_aiger_max_;}
 
 			inline int get_flag() {
-				current_flag++;
-				return current_flag;
+				current_flag_++;
+				return current_flag_;
 			}
 
-			Assignment get_state (bool forward)
+			Assignment get_state (bool forward);
 
 			void shrink_model (Assignment& model, const bool forward);
 
@@ -126,7 +126,7 @@ namespace gic
 
 			bool solve_with_assumption (const Assignment& st);
 			
-		protected:
+		// protected:
 			Model* model_;
 			int id_aiger_max_;  	//to store the maximum number used in aiger model
 			int current_flag_;     	//store the current assigned flag

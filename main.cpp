@@ -27,24 +27,16 @@
 #include <signal.h>
 #include <assert.h>
 using namespace std;
-using namespace car;
+using namespace gic;
 
 Statistics stats;
 ofstream* dot_file = NULL;
 Model * model = NULL;
-Checker *ch = NULL;
+Gic *ch = NULL;
 
 void  signal_handler (int sig_num)
 {
-    if (ch != NULL) {
-        cout << "Last Frame " << endl;
-		
-		ch->print_frames_sizes ();
-	    cout << "frame_ size:" << ch->frame_size () << endl;
-	    delete ch;
-	    ch = NULL;
-	}
-	
+    
 	if (model != NULL) {
 	    delete model;
 	    model = NULL;

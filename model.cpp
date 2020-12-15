@@ -30,7 +30,7 @@
 
 using namespace std;
 
-namespace car{
+namespace gic{
 
 	Model::Model (aiger* aig, const bool verbose)
 	{
@@ -375,24 +375,24 @@ namespace car{
 	    cout << "-------------------Model information--------------------" << endl;
 	    cout << endl << "number of clauses: " << cls_.size () << endl;
 	    for (int i  = 0; i < cls_.size (); i ++)
-	        car::print (cls_[i]);
+	        gic::print (cls_[i]);
 	    cout << endl << "next map: " << endl;
-	    car::print (next_map_);
+	    gic::print (next_map_);
 	    cout << endl << "reverse next map:" << endl;
-	    car::print (reverse_next_map_);
+	    gic::print (reverse_next_map_);
 	    cout << endl << "Initial state:" << endl;
-	    car::print (init_);
+	    gic::print (init_);
 	    cout << endl << "number of Inputs: " << num_inputs_ << endl;
 	    cout << endl << "number of Latches: " << num_latches_ << endl;
 	    cout << endl << "number of Outputs: " << num_outputs_ << endl;
-	    car::print (outputs_);
+	    gic::print (outputs_);
 	    cout << endl << "number of constraints: " << num_constraints_ << endl;
-	    car::print (constraints_);
+	    gic::print (constraints_);
 	    cout << endl << "Max id used: " << max_id_ << endl;
 	    cout << endl << "outputs start index: " << outputs_start_ << endl;
 	    cout << endl << "latches start index: " << latches_start_ << endl;
 	    cout << endl << "number of TRUE variables: " << trues_.size () << endl;
-	    car::print (trues_); 
+	    gic::print (trues_); 
 	    cout << endl << "-------------------End of Model information--------------------" << endl;   
 	}
 }

@@ -7,7 +7,7 @@ using namespace std;
 namespace gic
 {
 
-	bool solve_with_assumption (const Assignment st)
+	bool InvSolver::solve_with_assumption (const Assignment& st)
 	{
 		Assignment temp;
 		temp.insert(temp.begin(),st.begin(),st.end());

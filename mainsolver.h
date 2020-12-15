@@ -37,26 +37,27 @@ namespace gic{
 class MainSolver : public SATSolver 
 {
 	public:
-		MainSolver (Model*, Statistics* stats, const bool verbose = false);
+		MainSolver (Model* model, Statistics* stats, const bool verbose = false);
 		~MainSolver (){}
 		
 		
-		inline bool solve_with_assumption (const Assignment& st)
+		inline bool solve_with_assumption (Assignment& st)
 		{
 			return solve_assumption (st);
 		}
 		
+
 		void update_state_input (Assignment& inputs);
 		
 		inline int get_flag() {
-				max_flag++;
-				return max_flag;
+				max_flag_++;
+				return max_flag_;
 			}
 		
 	private:
 		//members
 		int max_flag_;
-		
+
 		Model* model_;
 		
 		Statistics* stats_;

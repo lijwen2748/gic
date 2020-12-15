@@ -9,7 +9,7 @@ CPPSOURCES = gic.cpp satsolver.cpp mainsolver.cpp invsolver.cpp model.cpp utilit
 OBJS = gic.o satsolver.o mainsolver.o invsolver.o model.o main.o utility.o data_structure.o aiger.o\
 	Solver.o Options.o System.o picosat.o
 
-CFLAG = -I../ -I./minisat -D__STDC_LIMIT_MACROS -D __STDC_FORMAT_MACROS -c -g 
+CFLAG = -I../ -I./minisat -D__STDC_LIMIT_MACROS -D __STDC_FORMAT_MACROS -c -g -fpermissive
 #CFLAG = -I../ -I./glucose -D__STDC_LIMIT_MACROS -D __STDC_FORMAT_MACROS -c -g 
 
 LFLAG = -g -lz -lpthread 
