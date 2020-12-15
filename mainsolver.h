@@ -32,7 +32,7 @@
 #include <assert.h>
 #include <iostream>
 
-namespace car{
+namespace gic{
 
 class MainSolver : public SATSolver 
 {

@@ -29,9 +29,9 @@
 #include "model.h"
 #include <vector>
 
-namespace car 
+namespace gic 
 {
-	class InvSolver : public CARSolver
+	class InvSolver : public SATSolver
 	{
 		public:
 			InvSolver (const Model* m, bool verbose = false) : id_aiger_max_ (const_cast<Model*>(m)->max_id ())
@@ -117,10 +117,21 @@ namespace car
 				current_flag++;
 				return current_flag;
 			}
+
+			Assignment get_state (bool forward)
+
+			void shrink_model (Assignment& model, const bool forward);
+
+			inline void flag_assumption_push_back (int flag) {flag_assumption_.push_back(flag);}
+
+			bool solve_with_assumption (const Assignment& st);
+			
 		protected:
 			Model* model_;
 			int id_aiger_max_;  	//to store the maximum number used in aiger model
-			int current_flag;     	//store the current assigned flag
+			int current_flag_;     	//store the current assigned flag
+			std::vector<int> flag_assumption_;  //store the current flag assumption
+
 
 	};
 }
