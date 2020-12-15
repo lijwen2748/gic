@@ -65,12 +65,7 @@ namespace gic
 			inv_solver_ = NULL;
 		}
 
-		inline bool sat_solve (Assignment& s, int bad) {
-			stats_->count_main_solver_SAT_time_start ();
-	        bool res = solver_->solve_with_assumption (s, bad);
-	        stats_->count_main_solver_SAT_time_end ();
-	        return res;
-		}
+		
 		/*****helper function******/
 
 		void gic_initialization ();
@@ -78,6 +73,8 @@ namespace gic
 		void gic_finalization ();	
 
 		bool immediate_satisfiable ();
+		
+		bool sat_solve (Assignment& s, int bad);
 
 		bool sat_solve (State* start, State* next);
 		

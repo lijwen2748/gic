@@ -122,7 +122,7 @@ namespace gic{
 	
 	
 	/***********************help function****************************/
-	Gic::Gic (Model* model, Statistics& stats, std::ofstream* dot, bool forward = true, bool evidence = false, bool verbose = false){
+	Gic::Gic (Model* model, Statistics& stats, std::ofstream* dot, bool forward, bool evidence, bool verbose){
 		model_ = model;
 		stats_ = &stats;
 		dot_ = dot;
@@ -132,8 +132,6 @@ namespace gic{
 		forward_ = forward;
 		evidence_ = evidence;
 		verbose_ = verbose;
-		solver_call_counter_ = 0;
-		inv_solver_call_counter_ = 0; 
 		init_flag_ = 0;
 	}
 
@@ -183,6 +181,16 @@ namespace gic{
 
 	    return res;
 	}
+	
+	bool Gic::sat_solve (Assignment& s, int bad) {
+		Cube assumption = s;
+		assumption.push_back (bad);
+		
+		stats_->count_main_solver_SAT_time_start ();
+	    bool res = solver_->solve_with_assumption (assumption);
+	    stats_->count_main_solver_SAT_time_end ();
+	    return res;
+	}
 
 	bool Gic::sat_solve (State* start, State* next){
 		Cube assumption = start->s();
@@ -222,21 +230,19 @@ namespace gic{
 		return uc;
 	}
 	
-	void Gic::initialize_invariant (Cube uc) {
+	void Gic::initialize_invariant (Cube& uc) {
 		assert (inv_.size () == 0);
 		if (forward_){
 			assert (inv_solver_ != NULL);
 			inv_push (uc,inv_solver_->get_flag ());
 		}
-		else
-			inv_push (bad_);
+		else{
+			//inv_push (bad_);/*do not push bad_ to inv_, it is by default that bad_ is in inv_ for backward*/
+		}
 	}
 	
 	bool Gic::invariant_check(){
-		if (inv_solver_ == NULL){
-			inv_solver_ = new InvSolver ();
-			inv_solver_->add_transition ();
-		}
+		assert (inv_solver_ != NULL);
 		
 		if (forward_){
 			for (auto it = inv_.begin(); it != inv_.end()); ++it){
@@ -246,11 +252,13 @@ namespace gic{
 			return true;
 		}
 		else{
+		/*
 			for (auto it = inv_.begin(); it != inv_.end()); ++it){
 				if (inv_solver_->solve_with_assumption (inv_prime (*it))) //to be done
 					return false;
 			}
 			return true;
+			*/
 		}
 		return false;
 	}
@@ -265,7 +273,7 @@ namespace gic{
 	} 
 
 
-	void Gic::renew_invariant (Cube uc){
+	void Gic::renew_invariant (Cube& uc){
 		if (forward_){
 			invsolver_add_flag_assumption ();   
 			inv_.clear();
@@ -274,11 +282,13 @@ namespace gic{
 			
 		}
 		else{
+		/*
 			invsolver_add_flag_assumption ();
 			Cube temp;
 			temp = inv_[0];
 			inv_.clear ();
 			inv_.push_back(temp);
+			*/
 		}
 		//MORE efficient algorithm is NEEDED!
 	}
@@ -369,10 +379,10 @@ namespace gic{
 		solver_->add_clause (tmp);
 	}
 
-	State* Gic::get_new_state (){
-		Assignment st = inv_solver_->get_state (forward_);
+	State* Gic::get_new_state (State* s){
+		Assignment st = inv_solver_->get_state (forward_); //to be done
 		std::pair<Assignment, Assignment> pa = state_pair (st);
-		State* res = new State (s, pa.first, pa.second);
+		State* res = new State (pa.first, pa.second);
 		
 		return res;
 	}
