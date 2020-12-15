@@ -296,9 +296,8 @@ namespace gic{
 	/*add flag assumption to decide which clause works*/
 	void Gic::invsolver_add_flag_assumption (){
 		if(forward_){
-			for (auto it = inv_.begin();it != inv_.end();it++){
-				inv_solver_.flag_assumption.push_back(-(*it)[0]);
-			}
+			for (auto it = inv_.begin();it != inv_.end();it++)
+				inv_solver_->flag_assumption_push_back(-(*it)[0]);
 		}
 		// else{
 		// 	auto it = inv_.begin();
@@ -307,7 +306,6 @@ namespace gic{
 		// 		inv_solver_.flag_assumption.push_back(-(*it)[0]);
 		// 	}
 		// }
-		
 	}
 
 

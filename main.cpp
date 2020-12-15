@@ -15,8 +15,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "checker.h"
-#include "bfschecker.h"
+#include "gic.h"
 #include "statistics.h"
 #include "data_structure.h"
 #include "model.h"
@@ -225,7 +224,7 @@ void check_aiger (int argc, char** argv)
    //which is consistent with the HWMCC format
    assert (model->num_outputs () >= 1);
    
-   ch = new Checker (model, stats, dot_file, forward, evidence, begin, end, inter, rotate, verbose, minimal_uc);
+   ch = new Gic (model, stats, dot_file, forward, evidence, verbose);
 
    aiger_reset(aig);
    

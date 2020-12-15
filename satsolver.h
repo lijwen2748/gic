@@ -67,7 +67,6 @@ namespace gic
 		bool solve_assumption ();
 		inline bool solve_assumption (std::vector<int>& assumption) 
 		{
-			clear_assumption();
 			assumption_ = assumption; 
 			return solve_assumption ();
 		}

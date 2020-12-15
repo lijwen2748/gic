@@ -27,15 +27,15 @@ namespace gic
 	{
 	    Assignment res;
 	    
-	    for (int i = 0; i < model_->num_inputs (); i ++)
-	    {
-	        if (i >= model.size ())
-	        {//the value is DON'T CARE, so we just set to 0
-	            res.push_back (0);
-	        }
-	        else
-	            res.push_back (model[i]);
-	    }
+	    // for (int i = 0; i < model_->num_inputs (); i ++)
+	    // {
+	    //     if (i >= model.size ())
+	    //     {//the value is DON'T CARE, so we just set to 0
+	    //         res.push_back (0);
+	    //     }
+	    //     else
+	    //         res.push_back (model[i]);
+	    // }
 	        
 		if (forward)
 		{
