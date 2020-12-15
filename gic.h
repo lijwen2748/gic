@@ -32,17 +32,17 @@ namespace gic
 		bool evidence_;
 		bool verbose_;
 		//varialbes related to flag in inv_
-		int init_flag_;    //initialize initial state to a flag, only backward
+		int init_flag_;    //initialize initial state to a flag, only for backward GIC
 		std::vector<Cube> inv_;
 
 		//members
 		Statistics *stats_;
 		std::ofstream* dot_; //for dot file
-		int solver_call_counter_; //counter for solver_ calls
-		int start_solver_call_counter_; //counter for inv_solver_ calls
 
 		State* init_;  // initial state
 		int bad_;
+		std::vector<State*> bads_;
+		std::vector<State*> inits_;
 		Model* model_;
 		MainSolver *solver_;
 		InvSolver *inv_solver_;
@@ -65,9 +65,9 @@ namespace gic
 			inv_solver_ = NULL;
 		}
 
-		inline bool sat_solve (State* s, int bad) {
+		inline bool sat_solve (Assignment& s, int bad) {
 			stats_->count_main_solver_SAT_time_start ();
-	        bool res = solver_->solve_with_assumption (s->s(), bad);
+	        bool res = solver_->solve_with_assumption (s, bad);
 	        stats_->count_main_solver_SAT_time_end ();
 	        return res;
 		}
@@ -82,8 +82,6 @@ namespace gic
 		bool sat_solve (State* start, State* next);
 		
 		bool sat_solve (int init_flag, State* next);
-
-		bool sat_solve (Cube& s, int bad);
 
 		bool invariant_check();
 
