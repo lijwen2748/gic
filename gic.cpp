@@ -80,18 +80,18 @@ namespace gic{
 	}
 	
 	bool Gic::forward_gic_check (){
-		if (sat_solve (init_, bad_))  
+		if (sat_solve (init_->s(), bad_))  
 			return true;
 		initialize_invariant (get_uc ());  
 					
 		while (!invariant_check ()){ //  C /\ T /\ \neg C'
 		    
 		    State* t = get_new_state (); //get assignment in \neg C'
-		    if (sat_solve (t, bad_)){
+		    if (sat_solve (t->s(), bad_)){
 		    	solver_->update_state_input (t->input());
 		    	Assignment& partial_t = get_partial (t); 
 		    	update_bad (partial_t);      
-		    	if (sat_solve (init_, bad_))
+		    	if (sat_solve (init_->s(), bad_))
 		    		return true;
 		    	renew_invariant (get_uc ()); //two different implementations
 		    }
