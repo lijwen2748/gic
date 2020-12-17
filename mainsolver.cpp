@@ -31,7 +31,7 @@ using namespace std;
 namespace gic
 {
 	
-	MainSolver::MainSolver (Model* m, Statistics* stats, const bool verbose) : id_aiger_max_ (const_cast<Model*>(m)->max_id ())
+	MainSolver::MainSolver (Model* m, Statistics* stats, const bool verbose)
 	{
 	    verbose_ = verbose;
 	    stats_ = stats;
@@ -47,6 +47,7 @@ namespace gic
 		//latches
 		for (int i = m->latches_start (); i < m->size (); i ++)
 		    add_clause (m->element (i));
+		id_aiger_max_ = model_->max_id ();
 		max_flag_ = id_aiger_max_;
 	}
 	

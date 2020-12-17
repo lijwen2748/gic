@@ -34,7 +34,7 @@ namespace gic
 	class InvSolver : public SATSolver
 	{
 		public:
-			InvSolver (const Model* m, bool verbose = false) : id_aiger_max_ (const_cast<Model*>(m)->max_id ())
+			InvSolver (const Model* m, bool verbose = false)
 			{
 				model_ = const_cast<Model*> (m);
 			    verbose_ = verbose;
@@ -48,6 +48,7 @@ namespace gic
 				//latches
 				for (int i = m->latches_start (); i < m->size (); i ++)
 				add_clause (m->element (i));
+				id_aiger_max_ = model_->max_id ();
 				current_flag_ = id_aiger_max_;
 			}
 			~InvSolver () {;}
@@ -126,6 +127,7 @@ namespace gic
 
 			bool solve_with_assumption (const Assignment& st);
 			
+			inline void flag_assumption_clear() {flag_assumption_.clear();}
 		// protected:
 			Model* model_;
 			int id_aiger_max_;  	//to store the maximum number used in aiger model

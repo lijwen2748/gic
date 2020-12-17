@@ -85,7 +85,7 @@ namespace gic{
 		Cube uc = get_uc ();
 		initialize_invariant (uc);  
 					
-		while (!invariant_check ()){ //  C /\ T /\ \neg C'
+		while (!invariant_check ()){ //  C /\ T /\ \neg C' add a flag to store the last unsat sat call pos
 		    
 		    State* t = get_new_state (); //get assignment in \neg C'
 		    if (sat_solve (t->s(), bad_)){
@@ -101,6 +101,7 @@ namespace gic{
 		    	uc = get_uc ();
 		    	update_invariant (uc); 
 		    }
+			invsolver_add_flag_assumption (); 
 		}
 		return false;
 	}
@@ -193,7 +194,7 @@ namespace gic{
 	
 	bool Gic::sat_solve (Assignment& s, int bad) {
 		Cube assumption = s;
-		if (abs(bad)*2 <= model_->max_id ()) //it is not a flag bad
+		if (abs(bad) <= model_->max_id ()/2) //it is not a flag bad
 			assumption.push_back (model_->prime (bad)); 
 		else
 			assumption.push_back (bad);
@@ -231,9 +232,9 @@ namespace gic{
 
 	Cube Gic::get_uc () {
 		Cube uc = solver_->get_uc ();
-		int id = forward_ ? bad_ : init_flag_;
+		int id = model_->max_id ()/2;
 		for (auto it = uc.begin(); it != uc.end(); ++it){
-			if (id == *it){
+			if (id < abs(*it)){
 				uc.erase (it);
 				break;
 			}
@@ -286,8 +287,7 @@ namespace gic{
 
 
 	void Gic::renew_invariant (Cube& uc){
-		if (forward_){
-			invsolver_add_flag_assumption ();   
+		if (forward_){  
 			inv_.clear();
 			assert (inv_solver_ != NULL);
 			inv_push (uc);
@@ -307,6 +307,7 @@ namespace gic{
 	/*add flag assumption to decide which clause works*/
 	void Gic::invsolver_add_flag_assumption (){
 		if(forward_){
+			inv_solver_->flag_assumption_clear();
 			for (auto it = inv_.begin();it != inv_.end();it++)
 				inv_solver_->flag_assumption_push_back(-(*it)[0]);
 		}
@@ -359,7 +360,10 @@ namespace gic{
 	void Gic::add_bad_to_solver (Cube& st){
 		int flag = solver_->get_flag ();
 		int new_bad = solver_->get_flag ();
-		solver_->add_equivalence (-new_bad, model_->prime (-bad_), -flag); //bad is in the prime version!!
+		if (abs(bad_) < model_->max_id()/2)
+			solver_->add_equivalence (-new_bad, model_->prime (-bad_), -flag); //bad is in the prime version!!
+		else
+			solver_->add_equivalence (-new_bad, -bad_, -flag);
 		Clause tmp;
 		tmp.push_back (flag);
 		for (auto it = st.begin (); it != st.end(); ++it){
@@ -391,13 +395,13 @@ namespace gic{
 
 	State* Gic::get_new_state (){
 		Assignment st = inv_solver_->get_state (forward_); //to be done
-		std::pair<Assignment, Assignment> pa = state_pair (st);
-		State* res = new State (pa.first, pa.second, forward_);
+		//std::pair<Assignment, Assignment> pa = state_pair (st);
+		State* res = new State (st, forward_);
 		
 		return res;
 	}
 
-	std::pair<Assignment, Assignment> Gic::state_pair (const Assignment& st)
+	std::pair<Assignment, Assignment> Gic::state_pair (const Assignment& st)//st only contains latches
 	{
 	    assert (st.size () >= model_->num_inputs () + model_->num_latches ());
 	    Assignment inputs, latches;
