@@ -53,6 +53,13 @@ namespace gic
 		bool forward_gic_check ();
 
 		bool backward_gic_check ();
+		
+		inline bool sat_solve (Assignment& assumption){
+			stats_->count_main_solver_SAT_time_start ();
+	    	bool res = solver_->solve_with_assumption (assumption);
+	    	stats_->count_main_solver_SAT_time_end ();
+	    	return res;
+		}
 
 		/*inline function*/
 		inline void create_inv_solver (){

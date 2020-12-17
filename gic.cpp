@@ -173,7 +173,9 @@ namespace gic{
 
 	bool Gic::immediate_satisfiable ()
 	{
-	    bool res = sat_solve (init_->s (), bad_);
+		Assignment ass = init_->s();
+		ass.push_back (bad_);
+	    bool res = sat_solve (ass);
 	    /*if (res)
 	    {
 	        Assignment st = solver_->get_model ();
