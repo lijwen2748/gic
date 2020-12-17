@@ -144,7 +144,7 @@ namespace gic
 	}
 	
 	//return the model from SAT solver when it provides SAT
-	std::vector<int>& SATSolver::get_model ()
+	std::vector<int> SATSolver::get_model ()
 	{
 		std::vector<int> res;
 		res.resize (nVars (), 0);
@@ -159,7 +159,7 @@ namespace gic
 	}
 	
 	//return the UC from SAT solver when it provides UNSAT
- 	std::vector<int>& SATSolver::get_uc ()
+ 	std::vector<int> SATSolver::get_uc ()
  	{
  		std::vector<int> reason;
 		if (verbose_)

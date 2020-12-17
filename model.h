@@ -38,9 +38,10 @@ public:
 	Model (aiger*, const bool verbose = false);
 	~Model () {}
 	
-	int prime (const int);
-	std::vector<int> previous (const int);
 	
+	//std::vector<int> previous (const int);
+	int prime (const int id);
+	int previous (const int id);
 	bool state_var (const int id)  {return (id >= 1) && (id <= num_inputs_+num_latches_);}
 	bool latch_var (const int id)  {return (id >= num_inputs_+1) && (id <= num_inputs_+num_latches_);}
 	
@@ -168,8 +169,6 @@ private:
 	void set_constraints (const aiger* aig);
 	void set_outputs (const aiger* aig);
 	void insert_to_reverse_next_map (const int index, const int val);
-public:
-	bool propagate (const std::vector<int>& assump, std::vector<int>& res);
 	
 };
 

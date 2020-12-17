@@ -71,8 +71,8 @@ namespace gic
 			set_assumption (assumption); 
 			return solve_assumption ();
 		}
-		std::vector<int>& get_model ();    //get the model from SAT solver
- 		std::vector<int>& get_uc ();       //get UC from SAT solver
+		std::vector<int> get_model ();    //get the model from SAT solver
+ 		std::vector<int> get_uc ();       //get UC from SAT solver
 		
 		void add_cube (const std::vector<int>&);
 		void add_clause_from_cube (const std::vector<int>&);

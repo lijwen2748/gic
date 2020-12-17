@@ -81,11 +81,11 @@ namespace gic
 
 		bool invariant_check();
 
-		Cube& get_uc (); 
+		Cube get_uc (); 
 
 		void initialize_invariant (Cube& uc);
 
-		Assignment& inv_prime (Assignment& cu);
+		Assignment inv_prime (Assignment& cu);
 
 		void renew_invariant (Cube& uc);
 
@@ -103,7 +103,7 @@ namespace gic
 
 		std::pair<Assignment, Assignment> state_pair (const Assignment& st);
 
-		Assignment& get_partial (State* t);
+		Assignment get_partial (State* t);
 		
 		void inv_push(Cube uc);
 

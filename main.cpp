@@ -55,21 +55,16 @@ void  signal_handler (int sig_num)
 
 void print_usage () 
 {
-  printf ("Usage: simplecar <-f|-b> [-e|-v|-h] <-begin|-end> <-interation|-rotation|-interation -rotation> <aiger file> <output directory>\n");
+  printf ("Usage: simplegic <-f|-b> [-e|-v|-h] <aiger file> <output directory>\n");
   printf ("       -f              forward checking (Default = backward checking)\n");
   printf ("       -b              backward checking \n");
   //printf ("       -p          enable propagation (Default = off)\n");
   //printf ("       -g          enable greedy search (Default = off)\n");
-  printf ("       -begin          state numeration from begin of the sequence\n");
-  printf ("       -end            state numeration from end of the sequence\n");
-  printf ("       -interaion      enable intersection heuristic\n");
-  printf ("       -rotation       enable rotation heurisitc\n");
   printf ("       -e              print witness (Default = off)\n");
   printf ("       -v              print verbose information (Default = off)\n");
   printf ("       -h              print help information\n");
   
   printf ("NOTE: -f and -b cannot be used together!\n");
-  printf ("NOTE: -begin and -end cannot be used together!\n");
   exit (0);
 }
 
@@ -100,16 +95,10 @@ string get_file_name (string& s)
 void check_aiger (int argc, char** argv)
 {
 
-   bool forward = false;
+   bool forward = true;
    bool verbose = false;
    bool evidence = false;
-   bool minimal_uc = false;
    bool gv = false; //to print dot format for graphviz 
-   
-   bool begin = false;
-   bool end = false;
-   bool inter = true;
-   bool rotate = false;
    
    string input;
    string output_dir;
@@ -127,24 +116,6 @@ void check_aiger (int argc, char** argv)
    			evidence = true;
    		else if (strcmp (argv[i], "-h") == 0)
    			print_usage ();
-   		else if (strcmp (argv[i], "-begin") == 0) {
-   			if (end) {
-   				print_usage ();
-   				exit (0);
-   			}
-   			begin = true;
-   		}
-   		else if (strcmp (argv[i], "-end") == 0) {
-   			if (begin) {
-   				print_usage ();
-   				exit (0);
-   			}
-   			end = true;
-   		}
-   		else if (strcmp (argv[i], "-interation") == 0)
-   			inter = true;
-   		else if (strcmp (argv[i], "-rotation") == 0)
-   			rotate = true;
    		else if (!input_set)
    		{
    			input = string (argv[i]);

@@ -51,7 +51,7 @@ namespace gic
 	}
 	
 	void MainSolver::update_state_input (Assignment& st){
-		Assignment& model = get_model ();
+		Assignment model = get_model ();
 		for (int i = 0; i < model_->num_inputs (); i ++)
 	    {
 	        if (i >= model.size ())

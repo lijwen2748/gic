@@ -17,7 +17,7 @@
 
 /*
 	Author: Jianwen Li
-	Update Date: October 17, 2017
+	Update Date: December 17, 2020
 	Data Structure for models
 */
 
@@ -43,10 +43,10 @@ namespace gic{
 		num_constraints_ = aig->num_constraints;
 		num_outputs_ = aig->num_outputs;
 		
-		//preserve two more ids for TRUE (max_id_ - 1) and FALSE (max_id_)
-		max_id_ = aig->maxvar+2;
-		true_ = max_id_ - 1;
-		false_ = max_id_;
+		//preserve one more ids for TRUE (aig->maxvar+1) and FALSE = - TRUE
+		true_ = aig->maxvar+1;
+		false_ = -true_;
+		max_id_ = 2*(aig->maxvar+1); // preserve one copy of vars for their primes
 		
 		collect_trues (aig);
 		
@@ -154,7 +154,7 @@ namespace gic{
 		
 		set_latches_start ();
 		
-		//create clauses for latches
+		//create clauses for next values of latches
 		gates.resize (max_id_+1, 0);
 		collect_necessary_gates (aig, aig->latches, aig->num_latches, exist_gates, gates, true);
 		for (vector<unsigned>::iterator it = gates.begin (); it != gates.end (); it ++)
@@ -165,9 +165,16 @@ namespace gic{
 			add_clauses_from_gate (aa);
 		}
 		
-		//create clauses for true and false
+		//create clauses for next map
+		for (auto it = next_map_.begin (); it != next_map_.end (); ++it){
+			//add clauses for prime (it->first) <-> it->second
+			cls_.push_back (clause (prime (-(it->first)), it->second));
+			cls_.push_back (clause (prime (it->first), -(it->second)));
+		}
+		
+		//create clauses for true
 		cls_.push_back (clause (true_));
-		cls_.push_back (clause (-false_));
+		cls_.push_back (clause (prime (true_)));
 	}
 	
 	
@@ -229,17 +236,27 @@ namespace gic{
 		{
 			cls_.push_back (clause (car_var (aa->lhs), -car_var (aa->rhs1)));
 			cls_.push_back (clause (-car_var (aa->lhs), car_var (aa->rhs1)));
+			//add the prime for aa->lhs
+			cls_.push_back (clause (prime (car_var (aa->lhs)), prime (-car_var (aa->rhs1))));
+			cls_.push_back (clause (prime (-car_var (aa->lhs)), prime (car_var (aa->rhs1))));
 		}
 		else if (is_true (aa->rhs1))
 		{
 			cls_.push_back (clause (car_var (aa->lhs), -car_var (aa->rhs0)));
 			cls_.push_back (clause (-car_var (aa->lhs), car_var (aa->rhs0)));
+			//add the prime for aa->lhs
+			cls_.push_back (clause (prime (car_var (aa->lhs)), prime (-car_var (aa->rhs0))));
+			cls_.push_back (clause (prime (-car_var (aa->lhs)), prime (car_var (aa->rhs0))));
 		}
 		else
 		{
 			cls_.push_back (clause (car_var (aa->lhs), -car_var (aa->rhs0), -car_var (aa->rhs1)));
 			cls_.push_back (clause (-car_var (aa->lhs), car_var (aa->rhs0)));
 			cls_.push_back (clause (-car_var (aa->lhs), car_var (aa->rhs1)));
+			//add the prime for aa->lhs
+			cls_.push_back (clause (prime (car_var (aa->lhs)), prime (-car_var (aa->rhs0)), prime (-car_var (aa->rhs1))));
+			cls_.push_back (clause (prime (-car_var (aa->lhs)), prime (car_var (aa->rhs0))));
+			cls_.push_back (clause (prime (-car_var (aa->lhs)), prime (car_var (aa->rhs1))));
 		}
 			
 	}
@@ -278,14 +295,25 @@ namespace gic{
 		}
 	}
 	
+	
 	int Model::prime (const int id)
 	{
+		assert (id != 0 && abs(id) <= max_id_);
+		return (id > 0 ? (id+max_id_) : -(id+max_id_));
+		/*
 		nextMap::iterator it = next_map_.find (abs (id));
 		if (it == next_map_.end ())
 		    return 0; //not found
 		return (id > 0 ? it->second : -(it->second));
+		*/
 	}
 	
+	
+	int Model::previous (const int id){
+		assert (abs(id) > max_id_);
+		return (id > 0 ? (id-max_id_) : (id+max_id_));
+	}
+	/*
 	std::vector<int> Model::previous (const int id)
 	{
 	    vector<int> res;
@@ -300,6 +328,7 @@ namespace gic{
 		}
 		return res;
 	}
+	
 	
 	void Model::shrink_to_previous_vars (Cube& uc, bool& constraint)
 	{
@@ -336,38 +365,7 @@ namespace gic{
 		}
 		uc = tmp;
 	}
-	
-	//propagate the model based on \@ assump, and the results are stored in \@ res
-	bool Model::propagate (const std::vector<int>& assump, std::vector<int>& res) {
-	    res.resize (max_id_ + 1, 0);
-	    for (int i = 0; i < assump.size (); i ++) {
-	        res[abs(assump[i])] = assump[i]; 
-	    }
-	    
-	    for (int i = 0; i < cls_.size (); i ++) {
-	        Clause& cl = cls_[i];
-	        vector<int> tmp;
-	        int j = 0;
-	        for (; j < cl.size (); j ++) {
-	            if (is_true (cl[j]) || res[abs (cl[j])] == cl[j]) {
-	                tmp.clear ();
-	                break;
-	            }
-	            if (is_false (cl[j]) || res[abs (cl[j])] == -cl[j]) 
-	                continue;
-	            tmp.push_back (cl[j]);
-	        }
-	        if (j >= cl.size ()) {
-	            if (tmp.size () == 1) {
-	                res[abs(tmp[0])] = tmp[0]; 
-	            }
-	            //propagate to false
-	            else if (tmp.size () == 0) 
-	                return false;
-	        }
-	    }
-	    return true;
-	}
+	*/
 	
 	
 	void Model::print ()

@@ -18,7 +18,7 @@ GCC = gcc
 
 GXX = g++
 
-simplecar: $(CSOURCES) $(CPPSOURCES)
+simplegic: $(CSOURCES) $(CPPSOURCES)
 	$(GCC) $(CFLAG) $(CSOURCES)
 	$(GCC) $(CFLAG) -std=c++11 $(CPPSOURCES)
 	$(GXX) -o simplegic $(OBJS) $(LFLAG)

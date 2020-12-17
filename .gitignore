@@ -2,4 +2,6 @@
 *.log
 *.res
 *.ps
-simplecar
+*.aig
+*.o
+simplegic

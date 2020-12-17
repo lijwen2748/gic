@@ -82,21 +82,25 @@ namespace gic{
 	bool Gic::forward_gic_check (){
 		if (sat_solve (init_->s(), bad_))  
 			return true;
-		initialize_invariant (get_uc ());  
+		Cube uc = get_uc ();
+		initialize_invariant (uc);  
 					
 		while (!invariant_check ()){ //  C /\ T /\ \neg C'
 		    
 		    State* t = get_new_state (); //get assignment in \neg C'
 		    if (sat_solve (t->s(), bad_)){
 		    	solver_->update_state_input (t->input());
-		    	Assignment& partial_t = get_partial (t); 
+		    	Assignment partial_t = get_partial (t); 
 		    	update_bad (partial_t);      
 		    	if (sat_solve (init_->s(), bad_))
 		    		return true;
-		    	renew_invariant (get_uc ()); //two different implementations
+		    	uc = get_uc ();
+		    	renew_invariant (uc); //two different implementations
 		    }
-		    else
-		    	update_invariant (get_uc ()); 
+		    else{
+		    	uc = get_uc ();
+		    	update_invariant (uc); 
+		    }
 		}
 		return false;
 	}
@@ -187,7 +191,10 @@ namespace gic{
 	
 	bool Gic::sat_solve (Assignment& s, int bad) {
 		Cube assumption = s;
-		assumption.push_back (bad);
+		if (abs(bad)*2 <= model_->max_id ()) //it is not a flag bad
+			assumption.push_back (model_->prime (bad)); 
+		else
+			assumption.push_back (bad);
 		
 		stats_->count_main_solver_SAT_time_start ();
 	    bool res = solver_->solve_with_assumption (assumption);
@@ -220,7 +227,7 @@ namespace gic{
 	    return res;
 	}
 
-	Cube& Gic::get_uc () {
+	Cube Gic::get_uc () {
 		Cube uc = solver_->get_uc ();
 		int id = forward_ ? bad_ : init_flag_;
 		for (auto it = uc.begin(); it != uc.end(); ++it){
@@ -266,7 +273,7 @@ namespace gic{
 		return false;
 	}
 	
-	Assignment& Gic::inv_prime (Assignment& cu){
+	Assignment Gic::inv_prime (Assignment& cu){
 		Assignment res;
 		auto it = cu.begin();
 		it ++;
@@ -350,7 +357,7 @@ namespace gic{
 	void Gic::add_bad_to_solver (Cube& st){
 		int flag = solver_->get_flag ();
 		int new_bad = solver_->get_flag ();
-		solver_->add_equivalence (-new_bad, -bad_, -flag);
+		solver_->add_equivalence (-new_bad, model_->prime (-bad_), -flag); //bad is in the prime version!!
 		Clause tmp;
 		tmp.push_back (flag);
 		for (auto it = st.begin (); it != st.end(); ++it){
@@ -403,7 +410,7 @@ namespace gic{
 	    return std::pair<Assignment, Assignment> (inputs, latches);
 	}
 	
-	Assignment& Gic::get_partial (State* t){//more than one implementation
+	Assignment Gic::get_partial (State* t){//more than one implementation
 		if (forward_){
 			Assignment tmp = t->s ();
 			tmp.insert (tmp.begin(), t->input().begin(), t->input().end());
