@@ -321,7 +321,7 @@ namespace gic{
 	}
 
 
-	void Gic::update_invariant (Cube& uc){
+	void Gic::update_invariant (Cube uc){
 		assert (inv_solver_ != NULL);
 		inv_push (uc);
 	}
