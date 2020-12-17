@@ -96,7 +96,7 @@ namespace gic
 
 		void renew_invariant (Cube& uc);
 
-		void update_invariant (Cube& uc);
+		void update_invariant (Cube uc);
 
 		void update_bad (Assignment& t);
 

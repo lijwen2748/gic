@@ -298,8 +298,11 @@ namespace gic{
 	
 	int Model::prime (const int id)
 	{
-		assert (id != 0 && abs(id) <= max_id_);
-		return (id > 0 ? (id+max_id_) : -(id+max_id_));
+		assert (id != 0 && abs(id) <= max_id_/2);
+		//if (id == 0 || abs(id) > max_id_/2){
+		//	cout << id << endl;		
+		//}
+		return (id > 0 ? (id+max_id_/2) : (id-max_id_/2));
 		/*
 		nextMap::iterator it = next_map_.find (abs (id));
 		if (it == next_map_.end ())
@@ -310,8 +313,8 @@ namespace gic{
 	
 	
 	int Model::previous (const int id){
-		assert (abs(id) > max_id_);
-		return (id > 0 ? (id-max_id_) : (id+max_id_));
+		assert (abs(id) > max_id_/2);
+		return (id > 0 ? (id-max_id_/2) : (id+max_id_/2));
 	}
 	/*
 	std::vector<int> Model::previous (const int id)
