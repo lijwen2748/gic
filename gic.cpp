@@ -106,27 +106,6 @@ namespace gic{
 		return false;
 	}
 	
-	// bool Gic::backward_gic_check (){
-	// 	if (sat_solve (init_flag_, bad_))  
-	// 		return true;
-	// 	initialize_invariant (get_uc ());  
-					
-	// 	while (!invariant_check ()){ //  /neg C /\ T /\ C'
-		    
-	// 	    State* t = get_new_state (); //get assignment in /neg C
-	// 	    if (sat_solve (init_flag_, t)){
-	// 	    	Assignment& partial_t = get_partial (t); 
-	// 	    	update_init (partial_t);     
-	// 	    	if (sat_solve (init_flag_, bad_))
-	// 	    		return true;
-	// 	    	renew_invariant (bad_); //two different implementations
-	// 	    }
-	// 	    else
-	// 	    	update_invariant (get_uc ())  
-	// 	}
-	// 	return false;
-	// }
-	
 	
 	
 	/***********************help function****************************/
@@ -309,7 +288,7 @@ namespace gic{
 		if(forward_){
 			inv_solver_->flag_assumption_clear();
 			for (auto it = inv_.begin();it != inv_.end();it++)
-				inv_solver_->flag_assumption_push_back(-(*it)[0]);
+				inv_solver_->flag_assumption_push_back((*it)[0]);
 		}
 		// else{
 		// 	auto it = inv_.begin();
@@ -371,6 +350,8 @@ namespace gic{
 			solver_->add_clause (-flag, *it);
 		}
 		solver_->add_clause (tmp);
+		//update bad_
+		bad_ = new_bad;
 	}
 	
 	void Gic::update_init (State* t) {
@@ -418,9 +399,13 @@ namespace gic{
 	
 	Assignment Gic::get_partial (State* t){//more than one implementation
 		if (forward_){
+			return t->s();
+		/*
 			Assignment tmp = t->s ();
 			tmp.insert (tmp.begin(), t->input().begin(), t->input().end());
+			solver_->print_clauses();
 			assert (!sat_solve (tmp, -bad_));
+		*/
 		}
 		// else{
 		// 	return t->s ();

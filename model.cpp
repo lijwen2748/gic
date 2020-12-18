@@ -125,7 +125,7 @@ namespace gic{
 	    //as the need for start solver construction
 	    hash_set<unsigned> exist_gates;
 		vector<unsigned> gates;
-		gates.resize (max_id_+1, 0);
+		gates.resize (max_id_/2+1, 0);
 		//create clauses for constraints
 		collect_necessary_gates (aig, aig->constraints, aig->num_constraints, exist_gates, gates);
 		
@@ -137,11 +137,11 @@ namespace gic{
 			add_clauses_from_gate (aa);
 		}
 		
-		
 		set_outputs_start ();
 		
 		//create clauses for outputs
-		gates.resize (max_id_+1, 0);
+		gates.clear();
+		gates.resize (max_id_/2+1, 0);
 		collect_necessary_gates (aig, aig->outputs, aig->num_outputs, exist_gates, gates);
 		
 		for (vector<unsigned>::iterator it = gates.begin (); it != gates.end (); it ++)
@@ -155,7 +155,8 @@ namespace gic{
 		set_latches_start ();
 		
 		//create clauses for next values of latches
-		gates.resize (max_id_+1, 0);
+		gates.clear();
+		gates.resize (max_id_/2+1, 0);
 		collect_necessary_gates (aig, aig->latches, aig->num_latches, exist_gates, gates, true);
 		for (vector<unsigned>::iterator it = gates.begin (); it != gates.end (); it ++)
 		{
@@ -175,6 +176,7 @@ namespace gic{
 		//create clauses for true
 		cls_.push_back (clause (true_));
 		cls_.push_back (clause (prime (true_)));
+		
 	}
 	
 	
