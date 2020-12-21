@@ -275,7 +275,15 @@ namespace gic{
 
 	void Gic::renew_invariant (Cube& uc){
 		if (forward_){  
-			inv_.clear();
+			std::vector<Cube> temp_inv;
+			for (auto it = inv_.begin();it != inv_.end();++it){
+				Cube temp;
+				for (int i = 1;i<(*it).size();++i)
+					temp.push_back((*it)[i]);
+				if (!sat_solve(temp,bad_)) 
+					temp_inv.push_back(*it);
+			}
+			inv_ = temp_inv;
 			invariant_check_start_ = 0;//reset
 			assert (inv_solver_ != NULL);
 			inv_push (uc);
@@ -408,13 +416,13 @@ namespace gic{
 	
 	Assignment Gic::get_partial (State* t){//more than one implementation
 		if (forward_){
-			Assignment tmp = t->s ();
-			tmp.insert (tmp.begin(), t->input().begin(), t->input().end());
+			Assignment tmp = t->input ();
+			tmp.insert (tmp.begin(), t->s().begin(), t->s().end());
 			//solver_->print_clauses();
 			//assert (!sat_solve (tmp, -bad_));
 			if (!sat_solve (tmp, -bad_))
 				return get_uc();
-			return tmp;
+			return t->s();
 		}
 		// else{
 		// 	return t->s ();
