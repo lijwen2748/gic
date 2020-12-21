@@ -80,9 +80,6 @@ namespace gic{
 	}
 	
 	bool Gic::forward_gic_check (){
-		solver_->print_assumption();
-		cout << "===============" << endl;
-		solver_->print_clauses();
 		if (sat_solve (init_->s(), bad_))  
 			return true;
 		Cube uc = get_uc ();
