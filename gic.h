@@ -45,6 +45,8 @@ namespace gic
 		Model* model_;
 		MainSolver *solver_;
 		InvSolver *inv_solver_;
+		
+		int invariant_check_start_; //the position of inv_ where invariant check starts
 
 		/*****main function******/
 

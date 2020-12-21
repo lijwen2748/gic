@@ -80,6 +80,9 @@ namespace gic{
 	}
 	
 	bool Gic::forward_gic_check (){
+		solver_->print_assumption();
+		cout << "===============" << endl;
+		solver_->print_clauses();
 		if (sat_solve (init_->s(), bad_))  
 			return true;
 		Cube uc = get_uc ();
@@ -120,6 +123,7 @@ namespace gic{
 		evidence_ = evidence;
 		verbose_ = verbose;
 		init_flag_ = 0;
+		invariant_check_start_ = 0;
 	}
 
 
@@ -237,9 +241,13 @@ namespace gic{
 		assert (inv_solver_ != NULL);
 		
 		if (forward_){
-			for (auto it = inv_.begin(); it != inv_.end(); ++it){
-				if (inv_solver_->solve_with_assumption (*it))
+			//for (auto it = inv_.begin(); it != inv_.end(); ++it){
+			for (int i = invariant_check_start_; i < inv_.size(); ++i){
+				if (inv_solver_->solve_with_assumption (inv_[i])){
+					//set invariant_check_start_
+					invariant_check_start_ = i;
 					return false;  //add flag assumption
+				}
 			}
 			return true;
 		}
@@ -268,6 +276,7 @@ namespace gic{
 	void Gic::renew_invariant (Cube& uc){
 		if (forward_){  
 			inv_.clear();
+			invariant_check_start_ = 0;//reset
 			assert (inv_solver_ != NULL);
 			inv_push (uc);
 			
@@ -399,18 +408,19 @@ namespace gic{
 	
 	Assignment Gic::get_partial (State* t){//more than one implementation
 		if (forward_){
-			return t->s();
-		/*
 			Assignment tmp = t->s ();
 			tmp.insert (tmp.begin(), t->input().begin(), t->input().end());
-			solver_->print_clauses();
-			assert (!sat_solve (tmp, -bad_));
-		*/
+			//solver_->print_clauses();
+			//assert (!sat_solve (tmp, -bad_));
+			if (!sat_solve (tmp, -bad_))
+				return get_uc();
+			return tmp;
 		}
 		// else{
 		// 	return t->s ();
 		// }	
-		return get_uc (); //pay attention to that if an input var is in the returned UC
+		return t->s();
+		//return get_uc (); //pay attention to that if an input var is in the returned UC
 	}
 	
 }	
