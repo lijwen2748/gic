@@ -61,7 +61,7 @@ namespace gic{
     	    out << "." << endl;
 	    gic_finalization ();
 	    return res;
-	}
+	}	
 	
 
 	bool Gic::gic_check (){
@@ -80,35 +80,100 @@ namespace gic{
 	}
 	
 	bool Gic::forward_gic_check (){
-		if (sat_solve (init_->s(), bad_))  
-			return true;
-		Cube uc = get_uc ();
-		initialize_invariant (uc);  
-					
-		while (!invariant_check ()){ //  C /\ T /\ \neg C' add a flag to store the last unsat sat call pos
-		    
-		    State* t = get_new_state (); //get assignment in \neg C'
-		    if (sat_solve (t->s(), bad_)){
-		    	solver_->update_state_input (t->input());
-		    	Assignment partial_t = get_partial (t); 
-		    	update_bad (partial_t);      
-		    	if (sat_solve (init_->s(), bad_))
-		    		return true;
-		    	uc = get_uc ();
-		    	renew_invariant (uc); //two different implementations
-		    }
-		    else{
-		    	uc = get_uc ();
-		    	update_invariant (uc); 
-		    }
-			invsolver_add_flag_assumption (); 
+		while (!inv_check (bad_)){
+			State *s = get_state ();
+			if (!inv_check (s)){
+				//generate_evidence ();
+				return true;
+			}
 		}
 		return false;
 	}
 	
+	bool Gic::inv_check (int bad){
+		if (invariants_.empty ()){
+			if (sat_solve (bad)){
+				mark_transition (init_);
+				return false;
+			}
+			Cube uc = get_uc ();
+			Invariant inv;
+			inv.push_back (InvariantElement (uc));
+			invariants_.push_back (inv);
+			inv_solver_add_clause (uc, 0);
+		}
+		
+		Invariant& inv = invariants_[0];
+			
+		for (int i = 0; i < inv.size (); ++i){
+			if (!inv[i]->has_checked()){
+				if (inv_sat_solve (inv[i]->cube(), 0)){
+					State* s = get_state ();
+					if (sat_solve (s->s(), bad)){
+						mark_transition (s);
+						inv_solver_add_clause_from_cube (s->s());
+						return false;
+					}
+					else{
+						Cube uc = get_uc ();
+						inv.push_back (InvariantElement (uc));
+						inv_solver_add_clause (uc, 0)
+						-- i;
+					}
+				}
+				else
+					inv[i]->set_checked ();
+			}	
+		}
+		return true;
+	}
+	
+	bool Gic::inv_check (State* t, int level){
+		assert (level >= 1);
+		assert (invariants_.size() >= level);
+		if (invariants_.size() == level){
+			if (sat_solve (t)){
+				mark_transition (init_, t);
+				return false;
+			}
+			Cube uc = get_uc ();
+			Invariant inv;
+			inv.push_back (InvariantElement (uc));
+			invariants_.push_back (inv);
+			inv_solver_add_clause (uc, level)
+		}
+		
+		Invariant& inv = invariants_[level];
+			
+		for (int i = 0; i < inv.size (); ++i){
+			if (!inv[i]->has_checked()){
+				if (inv_sat_solve (inv[i]->cube(), level)){
+					State* s = get_state ();
+					if (sat_solve (s, t)){
+						mark_transition (s, t);
+						inv_solver_add_clause_from_cube (s->s());
+						
+						if (!inv_check (s, level+1))
+							return false;
+						else 
+							--i; //re-do again to find new state, if exist
+					}
+					else{
+						Cube uc = get_uc ();
+						inv.push_back (Invariant (uc));
+						inv_solver_add_clause (uc, level)
+						-- i;
+					}
+				}
+				else
+					inv[i]->set_checked ();
+			}	
+		}
+		return true;
+	}
 	
 	
-	/***********************help function****************************/
+	/*========================helper function==================*/
 	Gic::Gic (Model* model, Statistics& stats, std::ofstream* dot, bool forward, bool evidence, bool verbose){
 		model_ = model;
 		stats_ = &stats;
@@ -120,27 +185,18 @@ namespace gic{
 		evidence_ = evidence;
 		verbose_ = verbose;
 		init_flag_ = 0;
-		invariant_check_start_ = 0;
 	}
-
-
-	void Gic::gic_initialization (){
+	
+	void Gic::gic_initilization (){
 		solver_ = new MainSolver (model_, stats_,verbose_);
 		inv_solver_ = new InvSolver (model_, verbose_);
 		
-		// if(!forward_){
-		// 	init_flag_ = solver->get_flag();
-		// 	Clause& tmp;
-		// 	tmp.push_back (init_flag_);
-		// 	for (auto it = init_->s().begin();it != init_->s().end();it++){
-		// 		tmp.push_back (-(*st));
-		// 		solver_->add_clause (-init_flag_, *it);
-		// 	}
-		// 	solver_->add_clause (tmp);
-		// 	//initialize init_ to a new_flag and add equivlance 
-		// }
+		//add !bad' as the constraint
+		Clause cl;
+		cl.push_back (-model_->prime (bad_));
+		inv_solver_add_clause (cl);
 	}
-
+	
 	void Gic::gic_finalization (){
 		if (solver_ != NULL) {
 	        delete solver_;
@@ -151,13 +207,14 @@ namespace gic{
 	        inv_solver_ = NULL;
 	    }
 	}
-
+	
 	bool Gic::immediate_satisfiable ()
 	{
 		Assignment ass = init_->s();
 		ass.push_back (bad_);
 	    bool res = sat_solve (ass);
-	    /*if (res)
+	    /*
+	    if (res)
 	    {
 	        Assignment st = solver_->get_model ();
 	        std::pair<Assignment, Assignment> pa = state_pair (st);
@@ -167,259 +224,102 @@ namespace gic{
 	            last_ = new State (NULL, pa.first, pa.second, forward_, true);
 	        
 	        return true;
-	    }*/
+	    }
+	    */
 
 	    return res;
 	}
 	
-	bool Gic::sat_solve (Assignment& s, int bad) {
-		Cube assumption = s;
-		if (abs(bad) <= model_->max_id ()/2) //it is not a flag bad
-			assumption.push_back (model_->prime (bad)); 
-		else
-			assumption.push_back (bad);
+	bool Gic::sat_solve (int bad) {
+		Cube assumption = init_->s();
+		assumption.push_back (model_->prime (bad));
 		
 		stats_->count_main_solver_SAT_time_start ();
 	    bool res = solver_->solve_with_assumption (assumption);
 	    stats_->count_main_solver_SAT_time_end ();
+	    if (res){//set the evidence
+	    
+	    }
 	    return res;
 	}
 
 	bool Gic::sat_solve (State* start, State* next){
-		Cube assumption = start->s();
+		Cube assumption;
+		if (start == NULL)
+			assumption = init_->s();
+		else
+			assumption = start->s();
 		Cube& s = next->s();
 		for (int i = 0; i < s.size (); ++i){
 			assumption.push_back (model_->prime (s[i]));
 		}
 		stats_->count_main_solver_SAT_time_start ();
-	    bool res = solver_->solve_with_assumption (assumption); //to be done
+	    bool res = solver_->solve_with_assumption (assumption); 
 	    stats_->count_main_solver_SAT_time_end ();
 	    return res;
 	}	
 	
-	bool Gic::sat_solve (int init_flag, State* next){
-		Cube assumption;
-		assumption.push_back(init_flag);
-		Cube& s = next->s();
-		for (int i = 0; i < s.size (); ++i){
-			assumption.push_back (model_->prime (s[i]));
+	bool Gic::inv_sat_solve (Assignment& st, int level){
+		Cube assumption = st;
+		assert (level+1 <= invariants_.size();)
+		for (int i = 0; i < level; ++i){
+			assumption.push_back (-invariants_[i].level_flag());
 		}
-		stats_->count_main_solver_SAT_time_start ();
-	    bool res = solver_->solve_with_assumption (assumption); //to be done
-	    stats_->count_main_solver_SAT_time_end ();
-	    return res;
+		assumption.push_back (invariants_[level].level_flag ());
+		return inv_solver_->solve_with_assumption (assumption);
 	}
-
+	
+	void Gic::inv_solver_add_clause (Cube& uc, int level){
+		Clause cl;
+		assert (level+1 <= invariants_.size());
+		cl.push_back (-invariants_[level].level_flag ());
+		for (auto it = uc.begin(); it != uc.end(); ++it)
+			cl.push_back (-(*it));
+		inv_solver_->add_clause (cl);
+	}
+	
+	void Gic::inv_solver_add_clause_from_cube (Cube& s){
+		inv_solver_->add_clause_from_cube (s);
+	}
+	
 	Cube Gic::get_uc () {
 		Cube uc = solver_->get_uc ();
+		Cube tmp;
 		int id = model_->max_id ()/2;
 		for (auto it = uc.begin(); it != uc.end(); ++it){
 			if (id < abs(*it)){
-				uc.erase (it);
-				break;
+				tmp.push_back (*it);
 			}
 		}
+		uc = tmp;
 		assert (!uc.empty ());
 		return uc;
 	}
 	
-	void Gic::initialize_invariant (Cube& uc) {
-		assert (inv_.size () == 0);
-		if (forward_){
-			assert (inv_solver_ != NULL);
-			inv_push (uc);
-		}
-		// else{
-		// 	//inv_push (bad_);/*do not push bad_ to inv_, it is by default that bad_ is in inv_ for backward*/
-		// }
+	void Gic::mark_transition (State* start, State* next){
+		State *nt = (next == NULL) ? last_ : next; //the value of last_ has not been assigned!
+		s->set_successor (nt);
+		t->set_predeccessor (s);
 	}
 	
-	bool Gic::invariant_check(){
-		assert (inv_solver_ != NULL);
-		
-		if (forward_){
-			//for (auto it = inv_.begin(); it != inv_.end(); ++it){
-			for (int i = invariant_check_start_; i < inv_.size(); ++i){
-				if (inv_solver_->solve_with_assumption (inv_[i])){
-					//set invariant_check_start_
-					invariant_check_start_ = i;
-					return false;  //add flag assumption
-				}
-			}
-			return true;
-		}
-		// else{
-		// /*
-		// 	for (auto it = inv_.begin(); it != inv_.end()); ++it){
-		// 		if (inv_solver_->solve_with_assumption (inv_prime (*it))) //to be done
-		// 			return false;
-		// 	}
-		// 	return true;
-		// 	*/
-		// }
-		return false;
-	}
-	
-	Assignment Gic::inv_prime (Assignment& cu){
-		Assignment res;
-		auto it = cu.begin();
-		it ++;
-		for (; it != cu.end(); ++it)
-			res.push_back (model_->prime (*it));
-		return res;
-	} 
-
-
-	void Gic::renew_invariant (Cube& uc){
-		if (forward_){  
-			std::vector<Cube> temp_inv;
-			for (auto it = inv_.begin();it != inv_.end();++it){
-				Cube temp;
-				for (int i = 1;i<(*it).size();++i)
-					temp.push_back((*it)[i]);
-				if (!sat_solve(temp,bad_)) 
-					temp_inv.push_back(*it);
-			}
-			inv_ = temp_inv;
-			invariant_check_start_ = 0;//reset
-			assert (inv_solver_ != NULL);
-			inv_push (uc);
-			
-		}
-		// else{
-		// /*
-		// 	invsolver_add_flag_assumption ();
-		// 	Cube temp;
-		// 	temp = inv_[0];
-		// 	inv_.clear ();
-		// 	inv_.push_back(temp);
-		// 	*/
-		// }
-		//MORE efficient algorithm is NEEDED!
-	}
-	/*add flag assumption to decide which clause works*/
-	void Gic::invsolver_add_flag_assumption (){
-		if(forward_){
-			inv_solver_->flag_assumption_clear();
-			for (auto it = inv_.begin();it != inv_.end();it++)
-				inv_solver_->flag_assumption_push_back((*it)[0]);
-		}
-		// else{
-		// 	auto it = inv_.begin();
-		// 	it++;
-		// 	for (;it != inv_.end();it++){
-		// 		inv_solver_.flag_assumption.push_back(-(*it)[0]);
-		// 	}
-		// }
-	}
-
-
-	void Gic::update_invariant (Cube uc){
-		assert (inv_solver_ != NULL);
-		inv_push (uc);
-	}
-	
-	void Gic::update_bad (Assignment& t) {
-		bads_.push_back (t);
-		add_bad_to_solver (t); 
-	}
-	
-	void Gic::inv_push(Cube uc){
-		uc.insert (uc.begin(), inv_solver_->get_flag ());
-		inv_.push_back(uc);
-		Clause temp;
-		temp.push_back(-uc[0]);
-		auto it = uc.begin();
-		it++;
-		if (forward_){
-			for (;it != uc.end();it++)
-				temp.push_back (model_->prime(-(*it)));//forward
-		}
-		// else{
-		// 	for (;it != uc.end();it++)
-		// 		temp.push_back (-(*it));//backward
-		// }
-		inv_solver_->add_clause(temp);     //add !uc as clause to solver
-	}
-
-	void Gic::inv_push(int bad){
-		Clause temp;
-		temp.push_back(-inv_solver_->get_flag ());
-		temp.push_back(-bad);     //?unsure
-		inv_solver_->add_clause(temp);     //add !uc as clause to solver
-	}
-
-
-	void Gic::add_bad_to_solver (Cube& st){
-		int flag = solver_->get_flag ();
-		int new_bad = solver_->get_flag ();
-		if (abs(bad_) < model_->max_id()/2)
-			solver_->add_equivalence (-new_bad, model_->prime (-bad_), -flag); //bad is in the prime version!!
-		else
-			solver_->add_equivalence (-new_bad, -bad_, -flag);
-		Clause tmp;
-		tmp.push_back (flag);
-		for (auto it = st.begin (); it != st.end(); ++it){
-			tmp.push_back (-(*it));
-			solver_->add_clause (-flag, *it);
-		}
-		solver_->add_clause (tmp);
-		//update bad_
-		bad_ = new_bad;
-	}
-	
-	void Gic::update_init (State* t) {
-		inits_.push_back (t);
-		add_init_to_solver (t->s()); 
-	}
-	
-	void Gic::add_init_to_solver (Cube& st){
-		int flag = solver_->get_flag ();
-		int new_init = solver_->get_flag ();
-		init_flag_ = new_init;
-		
-		solver_->add_equivalence (-new_init, -init_flag_, -flag);
-		Clause tmp;
-		tmp.push_back (flag);
-		for (auto it = st.begin (); it != st.end(); ++it){
-			tmp.push_back (-(*it));
-			solver_->add_clause (-flag, *it);
-		}
-		solver_->add_clause (tmp);
-	}
-
-	State* Gic::get_new_state (){
+	State* Gic::get_state (){
 		Assignment st = inv_solver_->get_state (forward_); //to be done
 		//std::pair<Assignment, Assignment> pa = state_pair (st);
 		State* res = new State (st, forward_);
 		
 		return res;
 	}
-
-	std::pair<Assignment, Assignment> Gic::state_pair (const Assignment& st)//st only contains latches
-	{
-	    assert (st.size () >= model_->num_inputs () + model_->num_latches ());
-	    Assignment inputs, latches;
-	    for (int i = 0; i < model_->num_inputs (); i ++)
-	        inputs.push_back (st[i]);
-	    for (int i = model_->num_inputs (); i < st.size (); i ++)
-	    {
-	        if (abs (st[i]) > model_->num_inputs () + model_->num_latches ())
-	            break;
-	        latches.push_back (st[i]);
-	    }
-	    return std::pair<Assignment, Assignment> (inputs, latches);
-	}
+	
 	
 	Assignment Gic::get_partial (State* t){//more than one implementation
 		if (forward_){
-			Assignment tmp = t->input ();
-			tmp.insert (tmp.begin(), t->s().begin(), t->s().end());
+			Assignment tmp = t->s ();
+			tmp.insert (tmp.begin(), t->input().begin(), t->input().end());
 			//solver_->print_clauses();
 			//assert (!sat_solve (tmp, -bad_));
 			if (!sat_solve (tmp, -bad_))
 				return get_uc();
-			return t->s();
+			return tmp;
 		}
 		// else{
 		// 	return t->s ();

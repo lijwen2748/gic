@@ -30,9 +30,6 @@ namespace gic
 		bool forward_;
 		bool evidence_;
 		bool verbose_;
-		//varialbes related to flag in inv_
-		int init_flag_;    //initialize initial state to a flag, only for backward GIC
-		std::vector<Cube> inv_;
 
 		//members
 		Statistics *stats_;
@@ -40,13 +37,38 @@ namespace gic
 
 		State* init_;  // initial state
 		int bad_;
-		std::vector<Assignment> bads_;
-		std::vector<State*> inits_;
 		Model* model_;
 		MainSolver *solver_;
 		InvSolver *inv_solver_;
 		
-		int invariant_check_start_; //the position of inv_ where invariant check starts
+		State* last_;
+		
+		class InvariantElement{
+		public:
+			InvariantElement (Cube& c) : cu_(c), checked_(false){
+			}
+			inline bool has_checked () {return checked_;}
+			inline void set_checked (bool val) {checked_ = val;}
+			inline Cube& cube() {return cu_;}
+		private:
+			Cube cu_;
+			bool checked_;
+		};
+		
+		class Invariant{
+		public:
+			Invariant (){level_flag_ = inv_solver_->get_flag ();}
+			inline void push_back (InvariantElement& ele) {inv_.push_back (ele);}
+			inline std::vector<InvariantElement>& inv () {return inv_;}
+			inline int get_level_flag () {return level_flag_;}
+			inline void set_level_flag (int val) {level_flag_ = val;}
+		private:
+			std::vector<InvariantElement> inv_;
+			int level_flag_; //the flag for the level of the invariant
+		};
+		
+		std::vector<Invariant> invariants_;
+		
 
 		/*****main function******/
 
@@ -54,7 +76,7 @@ namespace gic
 
 		bool forward_gic_check ();
 
-		bool backward_gic_check ();
+		
 		
 		inline bool sat_solve (Assignment& assumption){
 			stats_->count_main_solver_SAT_time_start ();
@@ -82,43 +104,29 @@ namespace gic
 
 		bool immediate_satisfiable ();
 		
-		bool sat_solve (Assignment& s, int bad);
-
-		bool sat_solve (State* start, State* next);
+		bool inv_check (int bad);
 		
-		bool sat_solve (int init_flag, State* next);
+		bool inv_check (State* t, int level);
+		
+		bool sat_solve (int bad);
 
-		bool invariant_check();
+		bool sat_solve (State* start=NULL, State* next);
+		
+		bool inv_sat_solve (Assignment& st, int level);
+		
+		void inv_solver_add_clause (Cube& uc, int level);
+		
+		void inv_solver_add_clause_from_cube (Cube& s);
 
 		Cube get_uc (); 
-
-		void initialize_invariant (Cube& uc);
-
-		Assignment inv_prime (Assignment& cu);
-
-		void renew_invariant (Cube& uc);
-
-		void update_invariant (Cube uc);
-
-		void update_bad (Assignment& t);
-
-		void add_bad_to_solver (Cube& st);
-
-		void update_init (State* t);
-
-		void add_init_to_solver (Cube& st);
-
-		State* get_new_state ();
-
-		std::pair<Assignment, Assignment> state_pair (const Assignment& st);
-
-		Assignment get_partial (State* t);
 		
-		void inv_push(Cube uc);
-
-		void inv_push(int bad);
-
-		void invsolver_add_flag_assumption ();
+		void mark_transition (State* start, State* next);
+		
+		
+		State* get_state ();
+		
+		Assignment get_partial (State* t);
+		void generate_evidence ();
 
 	};
 
