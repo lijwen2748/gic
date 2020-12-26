@@ -82,7 +82,7 @@ namespace gic{
 	bool Gic::forward_gic_check (){
 		while (!inv_check (bad_)){
 			State *s = get_state ();
-			if (!inv_check (s)){
+			if (!inv_check (s, 1)){
 				//generate_evidence ();
 				return true;
 			}
@@ -192,10 +192,14 @@ namespace gic{
 		solver_ = new MainSolver (model_, stats_,verbose_);
 		inv_solver_ = new InvSolver (model_, verbose_);
 		
+		
 		//add !bad' as the constraint
 		Cube cu;
-		cu.push_back (model_->prime (bad_));
+		cu.push_back (bad_);
 		inv_solver_add_clause_from_cube (cu);
+		
+		last_ = new State ();
+		
 	}
 	
 	void Gic::gic_finalization (){
@@ -206,6 +210,10 @@ namespace gic{
 	    if (inv_solver_ != NULL) {
 	        delete inv_solver_;
 	        inv_solver_ = NULL;
+	    }
+	    if (last_ != NULL){
+	    	delete last_;
+	    	last_ = NULL;
 	    }
 	}
 	
@@ -263,6 +271,8 @@ namespace gic{
 			assumption.push_back (-invariants_[i].level_flag());
 		}
 		assumption.push_back (invariants_[level].level_flag ());
+		//gic::print (assumption);
+		//inv_solver_->print_clauses ();
 		return inv_solver_->solve_with_assumption (assumption);
 	}
 	
@@ -271,12 +281,16 @@ namespace gic{
 		assert (level+1 <= invariants_.size());
 		cl.push_back (-invariants_[level].level_flag ());
 		for (auto it = uc.begin(); it != uc.end(); ++it)
-			cl.push_back (-(*it));
+			cl.push_back (-model_->prime(*it));
 		inv_solver_->add_clause (cl);
 	}
 	
 	void Gic::inv_solver_add_clause_from_cube (Cube& s){
-		inv_solver_->add_clause_from_cube (s);
+		Clause cl;
+		for (auto it = s.begin(); it != s.end(); ++it){
+			cl.push_back (-model_->prime(*it));
+		}
+		inv_solver_->add_clause (cl);
 	}
 	
 	Cube Gic::get_uc () {
@@ -284,7 +298,7 @@ namespace gic{
 		Cube tmp;
 		int id = model_->max_id ()/2;
 		for (auto it = uc.begin(); it != uc.end(); ++it){
-			if (id < abs(*it)){
+			if (id >= abs(*it)){
 				tmp.push_back (*it);
 			}
 		}
@@ -296,7 +310,7 @@ namespace gic{
 	void Gic::mark_transition (State* start, State* next){
 		State *nt = (next == NULL) ? last_ : next; //the value of last_ has not been assigned!
 		start->set_successor (nt);
-		next->set_predecessor (start);
+		nt->set_predecessor (start);
 	}
 	
 	State* Gic::get_state (){

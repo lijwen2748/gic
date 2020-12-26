@@ -44,6 +44,8 @@
  	    State (const Assignment& latches) : s_ (latches), pre_ (NULL), next_ (NULL) {}
 
  		State (const Assignment& latches, const bool forward, const bool last = false); 
+ 		
+ 		State () : pre_(NULL), next_(NULL) {}
 
  		
  		State (State *s): pre_ (s->pre_), next_(s->next_), s_(s->s_), inputs_(s->inputs_), last_inputs_(s->last_inputs_), 

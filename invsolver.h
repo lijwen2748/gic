@@ -125,7 +125,7 @@ namespace gic
 
 			inline void flag_assumption_push_back (int flag) {flag_assumption_.push_back(flag);}
 
-			bool solve_with_assumption (const Assignment& st);
+			bool solve_with_assumption (Assignment& st);
 			
 			inline void flag_assumption_clear() {flag_assumption_.clear();}
 		// protected:
