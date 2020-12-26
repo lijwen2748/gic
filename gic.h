@@ -57,11 +57,15 @@ namespace gic
 		
 		class Invariant{
 		public:
-			Invariant (){level_flag_ = inv_solver_->get_flag ();}
-			inline void push_back (InvariantElement& ele) {inv_.push_back (ele);}
+			Invariant (){}
+			inline void push_back (InvariantElement ele) {inv_.push_back (ele);}
 			inline std::vector<InvariantElement>& inv () {return inv_;}
-			inline int get_level_flag () {return level_flag_;}
+			inline int level_flag () {return level_flag_;}
 			inline void set_level_flag (int val) {level_flag_ = val;}
+			inline int size () {return inv_.size();}
+			
+			//operator overloading
+			InvariantElement& operator [] (int id) {return inv_[id];}
 		private:
 			std::vector<InvariantElement> inv_;
 			int level_flag_; //the flag for the level of the invariant
@@ -108,19 +112,19 @@ namespace gic
 		
 		bool inv_check (State* t, int level);
 		
-		bool sat_solve (int bad);
+		bool sat_solve (Assignment& st, int bad);
 
-		bool sat_solve (State* start=NULL, State* next);
+		bool sat_solve (State* start, State* next);
 		
 		bool inv_sat_solve (Assignment& st, int level);
 		
-		void inv_solver_add_clause (Cube& uc, int level);
+		void inv_solver_add_clause_from_cube (Cube& uc, int level);
 		
 		void inv_solver_add_clause_from_cube (Cube& s);
 
 		Cube get_uc (); 
 		
-		void mark_transition (State* start, State* next);
+		void mark_transition (State* start, State* next=NULL);
 		
 		
 		State* get_state ();

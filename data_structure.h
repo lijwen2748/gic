@@ -95,6 +95,9 @@
  		inline int work_count_reset () {work_count_ = 0;}
 
 		inline std::vector<int>& input () {return inputs_;}
+		
+		inline void set_successor (State* t) {next_ = t;}
+		inline void set_predecessor (State* s) {pre_ = s;}
  		
  	private:
  	//s_ contains all latches, but if the value of latch l is not cared, assign it to -1.
