@@ -40,6 +40,7 @@ namespace gic
 		Model* model_;
 		MainSolver *solver_;
 		InvSolver *inv_solver_;
+		std::vector<State*> states_;
 		
 		State* last_;
 		
@@ -50,6 +51,8 @@ namespace gic
 			inline bool has_checked () {return checked_;}
 			inline void set_checked (bool val) {checked_ = val;}
 			inline Cube& cube() {return cu_;}
+			
+			inline void print () {gic::print (cu_);}
 		private:
 			Cube cu_;
 			bool checked_;
@@ -63,6 +66,13 @@ namespace gic
 			inline int level_flag () {return level_flag_;}
 			inline void set_level_flag (int val) {level_flag_ = val;}
 			inline int size () {return inv_.size();}
+			
+			inline void print () {
+				for(auto it = inv_.begin(); it != inv_.end(); ++it){
+					it->print();
+				}
+				std::cout<<"level_flag_ is" << level_flag_ << std::endl;
+			}
 			
 			//operator overloading
 			InvariantElement& operator [] (int id) {return inv_[id];}

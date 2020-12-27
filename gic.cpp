@@ -112,6 +112,7 @@ namespace gic{
 					State* s = get_state ();
 					if (sat_solve (s->s(), bad)){
 						mark_transition (s);
+						states_.push_back (s);
 						inv_solver_add_clause_from_cube (s->s());
 						return false;
 					}
@@ -145,32 +146,37 @@ namespace gic{
 			inv_solver_add_clause_from_cube (uc, level);
 		}
 		
-		Invariant& inv = invariants_[level];
+		Invariant* inv = &invariants_[level];
 			
-		for (int i = 0; i < inv.size (); ++i){
-			if (!inv[i].has_checked()){
-				if (inv_sat_solve (inv[i].cube(), level)){
+		for (int i = 0; i < inv->size (); ++i){
+			if (!(*inv)[i].has_checked()){
+				if (inv_sat_solve ((*inv)[i].cube(), level)){
 					State* s = get_state ();
 					if (sat_solve (s, t)){
 						mark_transition (s, t);
+						states_.push_back (s);
 						inv_solver_add_clause_from_cube (s->s());
 						
 						if (!inv_check (s, level+1))
 							return false;
-						else 
+						else {
 							--i; //re-do again to find new state, if exist
+							inv = &invariants_[level];
+						}
 					}
 					else{
 						Cube uc = get_uc ();
-						inv.push_back (InvariantElement (uc));
+						inv->push_back (InvariantElement (uc));
 						inv_solver_add_clause_from_cube (uc, level);
 						-- i;
 					}
 				}
 				else
-					inv[i].set_checked (true);
+					(*inv)[i].set_checked (true);
 			}	
 		}
+		//pop invariants_[level]
+		invariants_.pop_back ();
 		return true;
 	}
 	
@@ -210,6 +216,16 @@ namespace gic{
 	    if (inv_solver_ != NULL) {
 	        delete inv_solver_;
 	        inv_solver_ = NULL;
+	    }
+	    for(auto it = states_.begin(); it != states_.end(); ++it){
+	    	if ((*it) != NULL){
+	    		delete *it;
+	    		(*it) = NULL;
+	    	}
+	    }
+	    if (init_ != NULL){
+	    	delete init_;
+	    	init_ = NULL;
 	    }
 	    if (last_ != NULL){
 	    	delete last_;
