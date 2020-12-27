@@ -156,6 +156,7 @@ namespace gic{
 						mark_transition (s, t);
 						states_.push_back (s);
 						inv_solver_add_clause_from_cube (s->s());
+						//gic::print(s->s());
 						
 						if (!inv_check (s, level+1))
 							return false;
