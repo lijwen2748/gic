@@ -113,6 +113,7 @@ namespace gic{
 				if (inv_sat_solve (inv[i].cube(), 0)){
 					s = get_state ();
 					if (sat_solve (s->s(), bad)){
+						solver_->update_state_input (s->input ()); //update inputs of s
 						set_partial (s);
 						mark_transition (s);
 						states_.push_back (s);
@@ -159,6 +160,7 @@ namespace gic{
 				if (inv_sat_solve ((*inv)[i].cube(), level)){
 					State* s = get_state ();
 					if (sat_solve (s, t)){
+						solver_->update_state_input (s->input ()); //update inputs of s
 						set_partial (s); 
 						mark_transition (s, t);
 						states_.push_back (s);
@@ -194,8 +196,9 @@ namespace gic{
 	void Gic::set_partial (State* s){
 		bool res = inv_sat_solve (s);
 		if (!res){
-			cout << "get partial state success" << endl;
+			//cout << "get partial state success" << endl;
 			Cube cu = get_uc (inv_solver_);
+			remove_input (cu);
 			s->set_partial (cu);
 		}
 	}
@@ -313,7 +316,8 @@ namespace gic{
 	}
 	
 	bool Gic::inv_sat_solve (State* s){
-		Cube assumption = s->s();
+		Cube assumption = s->input();
+		assumption.insert (assumption.begin(), s->s().begin(), s->s().end());
 		//gic::print (assumption);
 		//inv_solver_->print_clauses ();
 		return inv_solver_->solve_with_assumption (assumption);
@@ -334,6 +338,7 @@ namespace gic{
 			cl.push_back (-model_->prime(*it));
 		}
 		inv_solver_->add_clause (cl);
+		//gic::print (s);
 	}
 	
 	Cube Gic::get_uc (SATSolver* solver) {
@@ -362,6 +367,15 @@ namespace gic{
 		State* res = new State (st, forward_);
 		
 		return res;
+	}
+	
+	void Gic::remove_input (Cube& uc) {
+		Cube tmp;
+		for (auto it = uc.begin(); it != uc.end(); ++it){
+			if (abs(*it) > model_->num_inputs())
+				tmp.push_back (*it);
+		}
+		uc = tmp;
 	}
 	
 	

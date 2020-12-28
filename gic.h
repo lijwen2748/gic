@@ -144,6 +144,8 @@ namespace gic
 		
 		void set_partial (State* s);
 		
+		void remove_input (Cube& uc);
+		
 		
 		Assignment get_partial (State* t);
 		void generate_evidence ();
