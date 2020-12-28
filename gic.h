@@ -3,6 +3,7 @@
 
  
 #include "data_structure.h"
+#include "satsolver.h"
 #include "invsolver.h"
 #include "mainsolver.h"
 #include "model.h"
@@ -118,7 +119,7 @@ namespace gic
 
 		bool immediate_satisfiable ();
 		
-		bool inv_check (int bad);
+		bool inv_check (int bad, State*& s);
 		
 		bool inv_check (State* t, int level);
 		
@@ -128,16 +129,21 @@ namespace gic
 		
 		bool inv_sat_solve (Assignment& st, int level);
 		
+		bool inv_sat_solve (State* s);
+		
 		void inv_solver_add_clause_from_cube (Cube& uc, int level);
 		
 		void inv_solver_add_clause_from_cube (Cube& s);
 
-		Cube get_uc (); 
+		Cube get_uc (SATSolver*); 
 		
 		void mark_transition (State* start, State* next=NULL);
 		
 		
 		State* get_state ();
+		
+		void set_partial (State* s);
+		
 		
 		Assignment get_partial (State* t);
 		void generate_evidence ();

@@ -80,23 +80,25 @@ namespace gic{
 	}
 	
 	bool Gic::forward_gic_check (){
-		while (!inv_check (bad_)){
-			State *s = get_state ();
+		State *s = NULL;
+		while (!inv_check (bad_, s)){
+			assert (s != NULL);
 			if (!inv_check (s, 1)){
 				//generate_evidence ();
 				return true;
 			}
+			s = NULL;
 		}
 		return false;
 	}
 	
-	bool Gic::inv_check (int bad){
+	bool Gic::inv_check (int bad, State*& s){
 		if (invariants_.empty ()){
 			if (sat_solve (init_->s(), bad)){
 				mark_transition (init_);
 				return false;
 			}
-			Cube uc = get_uc ();
+			Cube uc = get_uc (solver_);
 			Invariant inv;
 			inv.set_level_flag (inv_solver_->get_flag());
 			inv.push_back (InvariantElement (uc));
@@ -109,15 +111,19 @@ namespace gic{
 		for (int i = 0; i < inv.size (); ++i){
 			if (!inv[i].has_checked()){
 				if (inv_sat_solve (inv[i].cube(), 0)){
-					State* s = get_state ();
+					s = get_state ();
 					if (sat_solve (s->s(), bad)){
+						set_partial (s);
 						mark_transition (s);
 						states_.push_back (s);
-						inv_solver_add_clause_from_cube (s->s());
+						if (s->partial().size() != 0)
+							inv_solver_add_clause_from_cube (s->partial());
+						else
+							inv_solver_add_clause_from_cube (s->s());
 						return false;
 					}
 					else{
-						Cube uc = get_uc ();
+						Cube uc = get_uc (solver_);
 						inv.push_back (InvariantElement (uc));
 						inv_solver_add_clause_from_cube (uc, 0);
 						-- i;
@@ -138,7 +144,7 @@ namespace gic{
 				mark_transition (init_, t);
 				return false;
 			}
-			Cube uc = get_uc ();
+			Cube uc = get_uc (solver_);
 			Invariant inv;
 			inv.set_level_flag (inv_solver_->get_flag());
 			inv.push_back (InvariantElement (uc));
@@ -153,9 +159,13 @@ namespace gic{
 				if (inv_sat_solve ((*inv)[i].cube(), level)){
 					State* s = get_state ();
 					if (sat_solve (s, t)){
+						set_partial (s); 
 						mark_transition (s, t);
 						states_.push_back (s);
-						inv_solver_add_clause_from_cube (s->s());
+						if (s->partial().size() != 0)
+							inv_solver_add_clause_from_cube (s->partial());
+						else
+							inv_solver_add_clause_from_cube (s->s());
 						//gic::print(s->s());
 						
 						if (!inv_check (s, level+1))
@@ -166,7 +176,7 @@ namespace gic{
 						}
 					}
 					else{
-						Cube uc = get_uc ();
+						Cube uc = get_uc (solver_);
 						inv->push_back (InvariantElement (uc));
 						inv_solver_add_clause_from_cube (uc, level);
 						-- i;
@@ -179,6 +189,15 @@ namespace gic{
 		//pop invariants_[level]
 		invariants_.pop_back ();
 		return true;
+	}
+	
+	void Gic::set_partial (State* s){
+		bool res = inv_sat_solve (s);
+		if (!res){
+			cout << "get partial state success" << endl;
+			Cube cu = get_uc (inv_solver_);
+			s->set_partial (cu);
+		}
 	}
 	
 	
@@ -271,7 +290,7 @@ namespace gic{
 
 	bool Gic::sat_solve (State* start, State* next){
 		Cube assumption = start->s();
-		Cube& s = next->s();
+		Cube& s = next->partial().empty() ? next->s() : next->partial();
 		for (int i = 0; i < s.size (); ++i){
 			assumption.push_back (model_->prime (s[i]));
 		}
@@ -288,6 +307,13 @@ namespace gic{
 			assumption.push_back (-invariants_[i].level_flag());
 		}
 		assumption.push_back (invariants_[level].level_flag ());
+		//gic::print (assumption);
+		//inv_solver_->print_clauses ();
+		return inv_solver_->solve_with_assumption (assumption);
+	}
+	
+	bool Gic::inv_sat_solve (State* s){
+		Cube assumption = s->s();
 		//gic::print (assumption);
 		//inv_solver_->print_clauses ();
 		return inv_solver_->solve_with_assumption (assumption);
@@ -310,8 +336,8 @@ namespace gic{
 		inv_solver_->add_clause (cl);
 	}
 	
-	Cube Gic::get_uc () {
-		Cube uc = solver_->get_uc ();
+	Cube Gic::get_uc (SATSolver* solver) {
+		Cube uc = solver->get_uc ();
 		Cube tmp;
 		int id = model_->max_id ()/2;
 		for (auto it = uc.begin(); it != uc.end(); ++it){
@@ -346,7 +372,7 @@ namespace gic{
 			//solver_->print_clauses();
 			//assert (!sat_solve (tmp, -bad_));
 			if (!sat_solve (tmp, -bad_))
-				return get_uc();
+				return get_uc(solver_);
 			return tmp;
 		}
 		// else{

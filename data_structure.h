@@ -71,6 +71,7 @@
  		
  		inline int depth () {return dep_;}
  		inline Assignment& s () {return s_;}
+ 		inline Assignment& partial () {return partial_;}
  		inline State* next () {return next_;}
  		inline State* pre () {return pre_;}
  		inline Assignment& inputs_vec () {return inputs_;}
@@ -82,6 +83,8 @@
  		
  		inline int size () {return s_.size ();}
  		inline int element (int i) {return s_[i];}
+ 		
+ 		inline void set_partial (Assignment& cu) {partial_ = cu;}
  		
  		inline void set_next (State* nx) {next_ = nx;}
  		static void set_num_inputs_and_latches (const int n1, const int n2); 
@@ -104,6 +107,7 @@
  	private:
  	//s_ contains all latches, but if the value of latch l is not cared, assign it to -1.
  		Assignment s_;
+ 		Assignment partial_; //for partial state only
  		State* next_;
  		State* pre_;
  		std::vector<int> inputs_;
