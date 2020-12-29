@@ -188,8 +188,10 @@ namespace gic{
 					(*inv)[i].set_checked (true);
 			}	
 		}
+		add_invariant_to_solver (inv);
 		//pop invariants_[level]
 		invariants_.pop_back ();
+		inv = NULL;
 		return true;
 	}
 	
@@ -200,6 +202,24 @@ namespace gic{
 			Cube cu = get_uc (inv_solver_);
 			remove_input (cu);
 			s->set_partial (cu);
+		}
+	}
+	
+	void Gic::add_invariant_to_solver (Invariant* inv){
+		Clause cl;
+		for (int i = 0; i < inv->size(); ++i){
+			cl.push_back (inv_solver_->get_flag());
+		}
+		inv_solver_->add_clause (cl);
+		
+		for (int i = 0; i < inv->size(); ++i){
+			InvariantElement& ie = (*inv)[i];
+			for (int j = 0; j < ie.size(); ++j){
+				Clause tmp;
+				tmp.push_back (-cl[i]);
+				tmp.push_back (ie[j]);
+				inv_solver_->add_clause (tmp);
+			}
 		}
 	}
 	

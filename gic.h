@@ -52,8 +52,12 @@ namespace gic
 			inline bool has_checked () {return checked_;}
 			inline void set_checked (bool val) {checked_ = val;}
 			inline Cube& cube() {return cu_;}
+			inline int size () {return cu_.size();}
 			
 			inline void print () {gic::print (cu_);}
+			
+			//operator overloading
+			int& operator [] (int id) {return cu_[id];}
 		private:
 			Cube cu_;
 			bool checked_;
@@ -145,6 +149,8 @@ namespace gic
 		void set_partial (State* s);
 		
 		void remove_input (Cube& uc);
+		
+		void add_invariant_to_solver (Invariant* inv);
 		
 		
 		Assignment get_partial (State* t);
