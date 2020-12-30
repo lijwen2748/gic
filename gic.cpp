@@ -75,8 +75,36 @@ namespace gic{
 		
 		if (forward_) 
 			return forward_gic_check ();
-		// else 
-		// 	return backward_gic_check ();
+		else 
+		 	return backward_gic_check ();
+	}
+	
+	bool Gic::backward_gic_check (){
+		if (sat_solve (init_->s(), bad_))
+			return true;
+		while (inv_sat_solve (-bad_, bad_)){
+			State *s = get_state ();
+			states_.push_back (s);
+			if (deep_check (s))
+				return true;
+		}
+		return false;
+	}
+	
+	bool Gic::deep_check (State* t){
+		if (sat_solve (init_, t))
+			return true;
+		inv_solver_->add_clause_from_cube (t->s());
+		gic::print (t->s());
+		while (inv_sat_solve (-bad_, t)){
+			State *s = get_state ();
+			states_.push_back (s);
+			if (deep_check (s))
+				return true;
+		}
+		Cube uc = get_uc (inv_solver_);
+		inv_solver_->add_clause_from_cube (uc);
+		return false;
 	}
 	
 	bool Gic::forward_gic_check (){
@@ -241,11 +269,12 @@ namespace gic{
 		solver_ = new MainSolver (model_, stats_,verbose_);
 		inv_solver_ = new InvSolver (model_, verbose_);
 		
-		
+		if (forward_){
 		//add !bad' as the constraint
-		Cube cu;
-		cu.push_back (bad_);
-		inv_solver_add_clause_from_cube (cu);
+			Cube cu;
+			cu.push_back (bad_);
+			inv_solver_add_clause_from_cube (cu);
+		}
 		
 		last_ = new State ();
 		
@@ -310,6 +339,37 @@ namespace gic{
 	    }
 	    return res;
 	}
+	
+	bool Gic::inv_sat_solve (int not_bad, int bad) {
+		Cube assumption;
+		assumption.push_back (not_bad);
+		assumption.push_back (model_->prime (bad));
+		
+		stats_->count_main_solver_SAT_time_start ();
+		//inv_solver_->print_clauses ();
+	    bool res = inv_solver_->solve_with_assumption (assumption);
+	    stats_->count_main_solver_SAT_time_end ();
+	    if (res){//set the evidence
+	    
+	    }
+	    return res;
+	}
+	
+	bool Gic::inv_sat_solve (int not_bad, State* t) {
+		Cube assumption;
+		Cube& st = t->s();
+		for (auto it = st.begin (); it != st.end (); ++it)
+			assumption.push_back (model_->prime (*it));
+		assumption.push_back (not_bad);
+		
+		stats_->count_main_solver_SAT_time_start ();
+	    bool res = inv_solver_->solve_with_assumption (assumption);
+	    stats_->count_main_solver_SAT_time_end ();
+	    if (res){//set the evidence
+	    
+	    }
+	    return res;
+	}
 
 	bool Gic::sat_solve (State* start, State* next){
 		Cube assumption = start->s();
@@ -366,8 +426,13 @@ namespace gic{
 		Cube tmp;
 		int id = model_->max_id ()/2;
 		for (auto it = uc.begin(); it != uc.end(); ++it){
-			if (id >= abs(*it)){
-				tmp.push_back (*it);
+			if (forward_){
+				if (id >= abs(*it))
+					tmp.push_back (*it);
+			}
+			else{
+				if (id < abs(*it))
+					tmp.push_back (model_->previous (*it));
 			}
 		}
 		uc = tmp;

@@ -152,6 +152,12 @@ namespace gic
 		
 		void add_invariant_to_solver (Invariant* inv);
 		
+		/*************backward*************/
+		bool backward_gic_check ();
+		bool deep_check (State* t);
+		bool inv_sat_solve (int not_bad, int bad);
+		bool inv_sat_solve (int not_bad, State* t);
+		
 		
 		Assignment get_partial (State* t);
 		void generate_evidence ();

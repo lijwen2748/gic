@@ -95,7 +95,7 @@ string get_file_name (string& s)
 void check_aiger (int argc, char** argv)
 {
 
-   bool forward = true;
+   bool forward = false;
    bool verbose = false;
    bool evidence = false;
    bool gv = false; //to print dot format for graphviz 

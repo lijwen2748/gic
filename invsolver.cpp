@@ -37,14 +37,14 @@ namespace gic
 	    //         res.push_back (model[i]);
 	    // }
 	        
-		if (forward)
+		//if (forward)
 		{
 		    Assignment tmp;
 		    tmp.resize (model_->num_latches (), 0);
 		    for (int i = model_->num_inputs ()+1; i <= model_->num_inputs () + model_->num_latches (); i ++)
 		    {
 		    	
-		    	int p = model_->prime (i);
+		    	int p = forward ? model_->prime (i) : i;
 		    	assert (p != 0);
 		    	assert (model.size () > abs (p));
 		    	
@@ -59,6 +59,7 @@ namespace gic
 		    for (int i = 0; i < tmp.size (); i ++)
 		        res.push_back (tmp[i]);
 		}
+		
 		model = res;
 	}
 
