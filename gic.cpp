@@ -95,7 +95,7 @@ namespace gic{
 		if (sat_solve (init_, t))
 			return true;
 		inv_solver_->add_clause_from_cube (t->s());
-		gic::print (t->s());
+		//gic::print (t->s());
 		while (inv_sat_solve (-bad_, t)){
 			State *s = get_state ();
 			states_.push_back (s);
