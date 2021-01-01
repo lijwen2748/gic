@@ -125,7 +125,7 @@ namespace gic
 		
 		bool inv_check (int bad, State*& s);
 		
-		bool inv_check (State* t, int level);
+		bool inv_check (State* t, int level, Cube& st);
 		
 		bool sat_solve (Assignment& st, int bad);
 
@@ -139,7 +139,11 @@ namespace gic
 		
 		void inv_solver_add_clause_from_cube (Cube& s);
 
-		Cube get_uc (SATSolver*); 
+		Cube get_uc (SATSolver*);
+		
+		Cube get_uc (SATSolver*, Cube&); 
+		
+		bool included (State*, Cube&);
 		
 		void mark_transition (State* start, State* next=NULL);
 		

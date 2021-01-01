@@ -83,7 +83,8 @@ namespace gic{
 		State *s = NULL;
 		while (!inv_check (bad_, s)){
 			assert (s != NULL);
-			if (!inv_check (s, 1)){
+			Cube block_t;
+			if (!inv_check (s, 1, block_t)){
 				//generate_evidence ();
 				return true;
 			}
@@ -137,7 +138,7 @@ namespace gic{
 		return true;
 	}
 	
-	bool Gic::inv_check (State* t, int level){
+	bool Gic::inv_check (State* t, int level, Cube& block_t){
 		assert (level >= 1);
 		assert (invariants_.size() >= level);
 		if (invariants_.size() == level){
@@ -170,15 +171,20 @@ namespace gic{
 							inv_solver_add_clause_from_cube (s->s());
 						//gic::print(s->s());
 						
-						if (!inv_check (s, level+1))
+						Cube block_t_new;
+						if (!inv_check (s, level+1, block_t_new))
 							return false;
 						else {
+							if (included (t, block_t_new)){
+								block_t = block_t_new;
+								return true;
+							}
 							--i; //re-do again to find new state, if exist
 							inv = &invariants_[level];
 						}
 					}
 					else{
-						Cube uc = get_uc (solver_);
+						Cube uc = get_uc (solver_, block_t);
 						inv->push_back (InvariantElement (uc));
 						inv_solver_add_clause_from_cube (uc, level);
 						-- i;
@@ -189,6 +195,10 @@ namespace gic{
 			}	
 		}
 		add_invariant_to_solver (inv);
+		int sz = t->partial ().empty () ? t->s().size() : t->partial ().size ();
+		if (block_t.size() > 0 && block_t.size () < sz)
+			inv_solver_add_clause_from_cube (block_t);
+		//inv->print ();
 		//pop invariants_[level]
 		invariants_.pop_back ();
 		inv = NULL;
@@ -201,6 +211,7 @@ namespace gic{
 			//cout << "get partial state success" << endl;
 			Cube cu = get_uc (inv_solver_);
 			remove_input (cu);
+			std::sort (cu.begin(), cu.end(), gic::comp);
 			s->set_partial (cu);
 		}
 	}
@@ -373,6 +384,39 @@ namespace gic{
 		uc = tmp;
 		assert (!uc.empty ());
 		return uc;
+	}
+	
+	Cube Gic::get_uc (SATSolver* solver, Cube &st) {
+		Cube uc = solver->get_uc ();
+		Cube tmp;
+		int id = model_->max_id ()/2;
+		for (auto it = uc.begin(); it != uc.end(); ++it){
+			if (id >= abs(*it)){
+				tmp.push_back (*it);
+			}
+			else{
+				int id = model_->previous (*it);
+				auto it2 = st.begin();
+				for (; it2 != st.end(); ++it2){
+					if (abs (id) == abs (*it2))
+						break;
+					if (abs (id) < abs (*it2)){
+						st.insert (it2, id);
+						break;
+					}
+				}
+				if (it2 == st.end ())
+					st.push_back (id);
+			}
+		}
+		uc = tmp;
+		assert (!uc.empty ());
+		return uc;
+	}
+	
+	bool Gic::included (State* t, Cube& st){
+		Cube& s = t->partial().empty () ? t->s() : t->partial();
+		return imply (s, st);
 	}
 	
 	void Gic::mark_transition (State* start, State* next){
