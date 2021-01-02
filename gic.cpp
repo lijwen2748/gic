@@ -90,6 +90,7 @@ namespace gic{
 			}
 			s = NULL;
 		}
+		//inv_solver_->print_clauses ();
 		return false;
 	}
 	
@@ -146,7 +147,7 @@ namespace gic{
 				mark_transition (init_, t);
 				return false;
 			}
-			Cube uc = get_uc (solver_);
+			Cube uc = get_uc (solver_, block_t);
 			Invariant inv;
 			inv.set_level_flag (inv_solver_->get_flag());
 			inv.push_back (InvariantElement (uc));
@@ -175,10 +176,13 @@ namespace gic{
 						if (!inv_check (s, level+1, block_t_new))
 							return false;
 						else {
+						
+							assert (!block_t_new.empty ());
 							if (included (t, block_t_new)){
 								block_t = block_t_new;
 								return true;
 							}
+							
 							--i; //re-do again to find new state, if exist
 							inv = &invariants_[level];
 						}
@@ -195,17 +199,22 @@ namespace gic{
 			}	
 		}
 		add_invariant_to_solver (inv);
+		
 		int sz = t->partial ().empty () ? t->s().size() : t->partial ().size ();
 		if (block_t.size() > 0 && block_t.size () < sz)
 			inv_solver_add_clause_from_cube (block_t);
+		
 		//inv->print ();
 		//pop invariants_[level]
+		gic::print (block_t);
+		gic::print (t->s());
 		invariants_.pop_back ();
 		inv = NULL;
 		return true;
 	}
 	
 	void Gic::set_partial (State* s){
+	
 		bool res = inv_sat_solve (s);
 		if (!res){
 			//cout << "get partial state success" << endl;
@@ -214,10 +223,21 @@ namespace gic{
 			std::sort (cu.begin(), cu.end(), gic::comp);
 			s->set_partial (cu);
 		}
+	
 	}
 	
 	void Gic::add_invariant_to_solver (Invariant* inv){
 		Clause cl;
+		
+		if (inv->size () == 1){
+			InvariantElement& ie = (*inv)[0];
+			if (ie.size () == 1){
+				cl.push_back (ie[0]);
+				inv_solver_->add_clause (cl);
+				return;
+			}
+		}
+		
 		for (int i = 0; i < inv->size(); ++i){
 			cl.push_back (inv_solver_->get_flag());
 		}
@@ -395,18 +415,18 @@ namespace gic{
 				tmp.push_back (*it);
 			}
 			else{
-				int id = model_->previous (*it);
+				int idx = model_->previous (*it);
 				auto it2 = st.begin();
 				for (; it2 != st.end(); ++it2){
-					if (abs (id) == abs (*it2))
+					if (abs (idx) == abs (*it2))
 						break;
-					if (abs (id) < abs (*it2)){
-						st.insert (it2, id);
+					if (abs (idx) < abs (*it2)){
+						st.insert (it2, idx);
 						break;
 					}
 				}
 				if (it2 == st.end ())
-					st.push_back (id);
+					st.push_back (idx);
 			}
 		}
 		uc = tmp;
