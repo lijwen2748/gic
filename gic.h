@@ -135,6 +135,8 @@ namespace gic
 		
 		bool inv_sat_solve (State* s);
 		
+		bool inv_sat_solve (Cube& st);
+		
 		void inv_solver_add_clause_from_cube (Cube& uc, int level);
 		
 		void inv_solver_add_clause_from_cube (Cube& s);

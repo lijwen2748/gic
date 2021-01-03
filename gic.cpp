@@ -88,6 +88,14 @@ namespace gic{
 				//generate_evidence ();
 				return true;
 			}
+			
+			/*
+			int sz = s->partial ().empty () ? s->s().size() : s->partial ().size ();
+			if (block_t.size() > 0 && block_t.size () < sz)
+				inv_solver_add_clause_from_cube (block_t);
+			*/
+			states_.pop_back ();
+			delete s;
 			s = NULL;
 		}
 		//inv_solver_->print_clauses ();
@@ -140,6 +148,8 @@ namespace gic{
 	}
 	
 	bool Gic::inv_check (State* t, int level, Cube& block_t){
+		cout << "check state at level " << level <<endl;
+		gic::print (t->s());
 		assert (level >= 1);
 		assert (invariants_.size() >= level);
 		if (invariants_.size() == level){
@@ -176,12 +186,15 @@ namespace gic{
 						if (!inv_check (s, level+1, block_t_new))
 							return false;
 						else {
-						
+							states_.pop_back ();
+							delete s;
 							
 							if (included (t, block_t_new)){
+								cout << "included success at level " << level << endl;
 								block_t = block_t_new;
 								invariants_.pop_back ();
 								inv = NULL;
+								
 								return true;
 							}
 							
@@ -203,14 +216,33 @@ namespace gic{
 		}
 		add_invariant_to_solver (inv);
 		
+		/*
 		int sz = t->partial ().empty () ? t->s().size() : t->partial ().size ();
 		if (block_t.size() > 0 && block_t.size () < sz)
 			inv_solver_add_clause_from_cube (block_t);
+		*/
+		if (block_t.size() > 0){
+			assert (!inv_sat_solve (block_t));
+			Cube block_uc;
+			Cube uc = get_uc (inv_solver_, block_uc);
+			inv_solver_add_clause_from_cube (block_uc);
+			block_t = block_uc;
+			cout << "block cube at level " << level << endl;
+			gic::print (block_t);
+			gic::print (block_uc);
+		}
 		
+		//cout << "find inv at level " << level << endl;
 		//inv->print ();
 		//pop invariants_[level]
-		//gic::print (block_t);
-		//gic::print (t->s());
+		
+		
+		/*
+		if (!t->partial().empty())
+			gic::print (t->partial());
+		else
+			gic::print (t->s());
+		*/
 		invariants_.pop_back ();
 		inv = NULL;
 		return true;
@@ -377,6 +409,14 @@ namespace gic{
 		return inv_solver_->solve_with_assumption (assumption);
 	}
 	
+	bool Gic::inv_sat_solve (Cube& st){
+		Cube assumption;
+		for (auto it = st.begin(); it != st.end (); ++it){
+			assumption.push_back (model_->prime (*it));
+		}
+		return inv_solver_->solve_with_assumption (assumption);
+	}
+	
 	void Gic::inv_solver_add_clause_from_cube (Cube& uc, int level){
 		Clause cl;
 		assert (level+1 <= invariants_.size());
@@ -433,7 +473,7 @@ namespace gic{
 			}
 		}
 		uc = tmp;
-		assert (!uc.empty ());
+		//assert (!uc.empty ());
 		return uc;
 	}
 	
