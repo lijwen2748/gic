@@ -177,11 +177,12 @@ namespace gic{
 							return false;
 						else {
 						
-							assert (!block_t_new.empty ());
+							/*
 							if (included (t, block_t_new)){
 								block_t = block_t_new;
 								return true;
 							}
+							*/
 							
 							--i; //re-do again to find new state, if exist
 							inv = &invariants_[level];
