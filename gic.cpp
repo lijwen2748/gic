@@ -177,12 +177,14 @@ namespace gic{
 							return false;
 						else {
 						
-							/*
+							
 							if (included (t, block_t_new)){
 								block_t = block_t_new;
+								invariants_.pop_back ();
+								inv = NULL;
 								return true;
 							}
-							*/
+							
 							
 							--i; //re-do again to find new state, if exist
 							inv = &invariants_[level];
@@ -207,8 +209,8 @@ namespace gic{
 		
 		//inv->print ();
 		//pop invariants_[level]
-		gic::print (block_t);
-		gic::print (t->s());
+		//gic::print (block_t);
+		//gic::print (t->s());
 		invariants_.pop_back ();
 		inv = NULL;
 		return true;
