@@ -87,6 +87,14 @@ namespace gic{
 				//generate_evidence ();
 				return true;
 			}
+			/*
+			if (s->partial().size() != 0){
+				gic::print(s->partial());
+			}
+			else{
+				gic::print(s->s());
+			}
+			*/
 			s = NULL;
 		}
 		return false;
@@ -121,6 +129,7 @@ namespace gic{
 							inv_solver_add_clause_from_cube (s->partial());
 						else
 							inv_solver_add_clause_from_cube (s->s());
+						inv.set_last_checked_idx (i);
 						return false;
 					}
 					else{
@@ -140,17 +149,30 @@ namespace gic{
 	bool Gic::inv_check (State* t, int level){
 		assert (level >= 1);
 		assert (invariants_.size() >= level);
-		if (invariants_.size() == level){
-			if (sat_solve (init_, t)){
-				mark_transition (init_, t);
-				return false;
-			}
-			Cube uc = get_uc (solver_);
+			
+		if (invariants_.size() == level){//initialize the inv for level
 			Invariant inv;
 			inv.set_level_flag (inv_solver_->get_flag());
-			inv.push_back (InvariantElement (uc));
+			
+			if (invariants_[level-1].last_checked_idx () == 0){//only under this condition should check the reachability
+				if (sat_solve (init_, t)){
+					mark_transition (init_, t);
+					return false;
+				}
+				Cube uc = get_uc (solver_);
+				inv.push_back (InvariantElement (uc));
+			}
+			else{//propagate from level-1
+				Invariant &tmp = invariants_[level-1];
+				for (int i = 0; i < tmp.last_checked_idx(); ++i)
+					inv.push_back (tmp[i]);
+				//reset the checked status to false
+				for (int i = 0; i < inv.size (); ++i)
+					inv[i].set_checked (false);
+			}
 			invariants_.push_back (inv);
-			inv_solver_add_clause_from_cube (uc, level);
+			for (int i = 0; i < inv.size(); ++i)
+				inv_solver_add_clause_from_cube (inv[i].cube(), level);
 		}
 		
 		Invariant* inv = &invariants_[level];
@@ -164,11 +186,17 @@ namespace gic{
 						set_partial (s); 
 						mark_transition (s, t);
 						states_.push_back (s);
-						if (s->partial().size() != 0)
+						if (s->partial().size() != 0){
 							inv_solver_add_clause_from_cube (s->partial());
-						else
+							//gic::print(s->partial());
+						}
+						else{
 							inv_solver_add_clause_from_cube (s->s());
-						//gic::print(s->s());
+							//gic::print(s->s());
+						}
+						
+						
+						inv->set_last_checked_idx (i);
 						
 						if (!inv_check (s, level+1))
 							return false;
@@ -189,6 +217,8 @@ namespace gic{
 			}	
 		}
 		add_invariant_to_solver (inv);
+		//cout << "add inv at level " << level << endl;
+		//inv->print();
 		//pop invariants_[level]
 		invariants_.pop_back ();
 		inv = NULL;

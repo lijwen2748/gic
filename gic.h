@@ -65,12 +65,15 @@ namespace gic
 		
 		class Invariant{
 		public:
-			Invariant (){}
+			Invariant () : level_flag_(0), last_checked_idx_(0) {}
 			inline void push_back (InvariantElement ele) {inv_.push_back (ele);}
 			inline std::vector<InvariantElement>& inv () {return inv_;}
 			inline int level_flag () {return level_flag_;}
 			inline void set_level_flag (int val) {level_flag_ = val;}
 			inline int size () {return inv_.size();}
+			
+			inline int last_checked_idx () {return last_checked_idx_;}
+			inline void set_last_checked_idx (int id) {last_checked_idx_ = id;}
 			
 			inline void print () {
 				for(auto it = inv_.begin(); it != inv_.end(); ++it){
@@ -84,6 +87,7 @@ namespace gic
 		private:
 			std::vector<InvariantElement> inv_;
 			int level_flag_; //the flag for the level of the invariant
+			int last_checked_idx_;
 		};
 		
 		std::vector<Invariant> invariants_;
