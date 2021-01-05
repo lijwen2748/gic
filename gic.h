@@ -156,6 +156,8 @@ namespace gic
 		
 		void add_invariant_to_solver (Invariant* inv);
 		
+		void try_reduce (State* s, Cube& cu);
+		
 		
 		Assignment get_partial (State* t);
 		void generate_evidence ();

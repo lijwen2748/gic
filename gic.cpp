@@ -83,18 +83,20 @@ namespace gic{
 		State *s = NULL;
 		while (!inv_check (bad_, s)){
 			assert (s != NULL);
-			if (!inv_check (s, 1)){
-				//generate_evidence ();
-				return true;
-			}
-			/*
 			if (s->partial().size() != 0){
 				gic::print(s->partial());
 			}
 			else{
 				gic::print(s->s());
 			}
-			*/
+			
+			if (!inv_check (s, 1)){
+				//generate_evidence ();
+				return true;
+			}
+			
+			
+			
 			s = NULL;
 		}
 		return false;
@@ -130,6 +132,7 @@ namespace gic{
 						else
 							inv_solver_add_clause_from_cube (s->s());
 						inv.set_last_checked_idx (i);
+						cout << "stop in level 0 at " << i << " out of " << inv.size() << endl;
 						return false;
 					}
 					else{
@@ -197,6 +200,7 @@ namespace gic{
 						
 						
 						inv->set_last_checked_idx (i);
+						cout << "stop in level " << level << " at " << i << " out of " << inv->size() << endl;
 						
 						if (!inv_check (s, level+1))
 							return false;
@@ -231,7 +235,39 @@ namespace gic{
 			//cout << "get partial state success" << endl;
 			Cube cu = get_uc (inv_solver_);
 			remove_input (cu);
+			/*
+			cout << "before reduce " << cu.size () << endl;
+			gic::print (cu);
+			try_reduce (s, cu);
+			cout << "after reduce " << cu.size() << endl;
+			gic::print (cu);
+			*/
 			s->set_partial (cu);
+		}
+	}
+	
+	void Gic::try_reduce (State* s, Cube& cu){
+		int max_fail = 20;
+		int j = cu.size()-1;
+		for (int i = 0; i < max_fail; ++i){
+			if (cu.size() <= max_fail)
+				break;
+			Cube assumption = s->input ();
+			
+			for (int k = 0; k < cu.size(); ++k){
+				if (k != j){
+					assumption.push_back (cu[k]);
+				}
+			}
+			
+			bool res = inv_solver_->solve_with_assumption (assumption);
+			if (res){
+				--j;
+				continue;
+			}
+			cu = get_uc (inv_solver_);
+			remove_input (cu);
+			--i;
 		}
 	}
 	
@@ -366,8 +402,12 @@ namespace gic{
 	}
 	
 	bool Gic::inv_sat_solve (State* s){
+	/*
 		Cube assumption = s->input();
 		assumption.insert (assumption.begin(), s->s().begin(), s->s().end());
+	*/
+		Cube assumption = s->s();
+		assumption.insert (assumption.begin(), s->input().begin(), s->input().end());
 		//gic::print (assumption);
 		//inv_solver_->print_clauses ();
 		return inv_solver_->solve_with_assumption (assumption);
