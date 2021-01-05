@@ -131,9 +131,9 @@ namespace gic
 
 		bool sat_solve (State* start, State* next);
 		
-		bool inv_sat_solve (Assignment& st, int level);
+		//bool inv_sat_solve (Assignment& st, int level);
 		
-		bool inv_sat_solve (State* s);
+		//bool inv_sat_solve (State* s);
 		
 		void inv_solver_add_clause_from_cube (Cube& uc, int level);
 		
@@ -157,6 +157,9 @@ namespace gic
 		bool deep_check (State* t);
 		bool inv_sat_solve (int not_bad, int bad);
 		bool inv_sat_solve (int not_bad, State* t);
+		bool inv_sat_solve (Cube& cu, int n);
+		Cube get_mic (SATSolver* solver);
+		bool try_reduce (Cube s, Cube t);
 		
 		
 		Assignment get_partial (State* t);
