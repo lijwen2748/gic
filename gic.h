@@ -130,6 +130,8 @@ namespace gic
 		bool sat_solve (Assignment& st, int bad);
 
 		bool sat_solve (State* start, State* next);
+
+		bool sat_solve (State* start, Cube& next);
 		
 		//bool inv_sat_solve (Assignment& st, int level);
 		
@@ -154,13 +156,16 @@ namespace gic
 		
 		/*************backward*************/
 		bool backward_gic_check ();
-		bool deep_check (State* t);
+		bool deep_check (State* t, Cube& block_intersect);
+		bool deep_check (Cube& intersect_uc, Cube t, Cube& block_intersect);
 		bool inv_sat_solve (int not_bad, int bad);
 		bool inv_sat_solve (int not_bad, State* t);
 		bool inv_sat_solve (Cube& cu, int n);
+		bool inv_sat_solve (Cube& cu, Cube& t);
 		Cube get_mic (SATSolver* solver);
 		bool try_reduce (Cube s, Cube t);
-		
+		void intersect (Cube& main_state, Cube& t, Cube& intersection);
+		bool in_initial (Cube &cu);
 		
 		Assignment get_partial (State* t);
 		void generate_evidence ();
