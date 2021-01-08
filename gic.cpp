@@ -126,7 +126,7 @@ namespace gic{
 		while (inv_sat_solve (intersect_uc, t)){
 			State *s = get_state ();
 			Cube temp_s = s->s();
-			Cube intersection;
+			Cube intersection = intersect_uc;
 			intersect (temp_s,t,intersection);
 			if (intersection.empty())
 				intersection = s->s();
@@ -136,7 +136,7 @@ namespace gic{
 			states_.push_back (s);
 			if (deep_check (intersection,temp_s, block_intersect))
 				return true;
-			
+			std::sort (t.begin(), t.end(), gic::comp);
 			if (gic::imply (t,block_intersect)){
 				//cout<<"block works"<<endl;
 				return false;
@@ -168,15 +168,17 @@ namespace gic{
 
 	void Gic::intersect (Cube& main_state, Cube& t, Cube& intersection){
 		Cube tail;
-		std::sort (t.begin(), t.end(), gic::comp);
-	    for (auto it = main_state.begin(); it != main_state.end(); ++it) {
-	    	if (t[abs(*it)-model_->num_inputs ()-1] == *it) 
-	    		intersection.push_back (*it);
+		Cube perfix;
+		if (intersection.empty()) intersection = t;
+	    for (auto it = intersection.begin(); it != intersection.end(); ++it) {
+	    	if (main_state[abs(*it)-model_->num_inputs ()-1] == *it) 
+	    		perfix.push_back (*it);
 		else 
 			tail.push_back (*it);
 	    }
-		tail.insert (tail.begin (),intersection.begin (),intersection.end());
+		tail.insert (tail.begin (),perfix.begin (),perfix.end());
 		main_state = tail;
+		intersection = perfix;
 
 	}
 	bool Gic::in_initial (Cube &cu){
