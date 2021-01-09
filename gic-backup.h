@@ -45,9 +45,6 @@ namespace gic
 		
 		State* last_;
 		
-		Cube common_;
-		int common_flag_;
-		
 		class InvariantElement{
 		public:
 			InvariantElement (Cube& c) : cu_(c), checked_(false){
@@ -133,8 +130,6 @@ namespace gic
 		bool sat_solve (Assignment& st, int bad);
 
 		bool sat_solve (State* start, State* next);
-
-		bool sat_solve (State* start, Cube& next);
 		
 		//bool inv_sat_solve (Assignment& st, int level);
 		
@@ -162,17 +157,11 @@ namespace gic
 		bool deep_check (State* t);
 		bool inv_sat_solve (int not_bad, int bad);
 		bool inv_sat_solve (int not_bad, State* t);
-		bool inv_sat_solve (Cube& cu, int n);
-		bool inv_sat_solve (Cube& cu, Cube& t);
-		Cube get_mic (SATSolver* solver);
+		bool inv_sat_solve (const Cube& cu, int n);
+		Cube get_mic (SATSolver* solver, State* t);
 		bool try_reduce (Cube s, Cube t);
-		bool in_initial (Cube &cu);
+		bool gic_down (Cube& cu, int n);
 		
-		void set_common (Cube& st);
-		bool common_in_initial ();
-		void update_common_with (State* s);
-		bool inv_common_sat_solve (int not_bad, State* t);
-		bool is_blocked (State* t);
 		
 		Assignment get_partial (State* t);
 		void generate_evidence ();

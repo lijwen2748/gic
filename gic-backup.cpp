@@ -83,13 +83,10 @@ namespace gic{
 		if (sat_solve (init_->s(), bad_))
 			return true;
 		while (inv_sat_solve (-bad_, bad_)){
-			Cube block_intersect;
 			State *s = get_state ();
 			states_.push_back (s);
 			if (deep_check (s))
 				return true;
-			states_.pop_back ();
-			delete s;
 		}
 		return false;
 	}
@@ -98,202 +95,28 @@ namespace gic{
 		if (sat_solve (init_, t))
 			return true;
 		inv_solver_->add_clause_from_cube (t->s());
-		if (common_.empty ())
-			set_common (t->s());
-			
-		LOOP_START:
-		while (inv_common_sat_solve (-bad_, t)){
-			State* s = get_state ();
-			update_common_with (s);
-			if (common_.empty () || common_in_initial ()){
-				set_common (s->s ());
-			}
-			
-			states_.push_back (s);
-			if (deep_check (s))
-				return true;
-			states_.pop_back ();
-			delete s;
-			
-			if (is_blocked(t))
-				return false;
-			else{
-				set_common (t->s());
-			}
-		}
-		Cube mic = get_mic (inv_solver_);
-		std::sort (mic.begin(), mic.end(), gic::comp);
-		if (gic::imply (common_, mic)){
-			inv_solver_->add_clause_from_cube (mic);
-			set_common (mic);
-			return false;
-		}
-		else{
-			set_common (mic);
-			goto LOOP_START;
-		}
-		
-		return false;
-	}
-	
-	void Gic::set_common (Cube& st){
-		common_ = st;
-		common_flag_ = inv_solver_->get_flag ();
-	}
-	
-	bool Gic::is_blocked (State* t){
-		return gic::imply (t->s(), common_);
-	}
-	
-	bool Gic::common_in_initial (){
-		return gic::imply (init_->s(), common_);
-	}
-	
-	void Gic::update_common_with (State* s){
-		Cube& st = s->s();
-		int start = model_->num_inputs() + 1;
-		Cube tmp;
-		for (auto it = common_.begin(); it != common_.end (); ++it){
-			if (st[abs(*it)-start] == (*it))
-				tmp.push_back (*it);
-		}
-		common_ = tmp;
-	}
-	
-	bool Gic::inv_common_sat_solve (int not_bad, State* t){
-		Cube cl = common_;
-		cl.push_back (common_flag_);
-		inv_solver_->add_clause_from_cube (cl);
-		
-		Cube assumption = t->s();
-		assumption.insert (assumption.begin(), common_.begin(), common_.end());
-		for (int i  = 0; i < assumption.size (); ++i)
-			assumption[i] = model_->prime (assumption[i]);
-		assumption.push_back (common_flag_);
-			
-		stats_->count_main_solver_SAT_time_start ();
-		//inv_solver_->print_clauses ();
-	    bool res = inv_solver_->solve_with_assumption (assumption);
-	    stats_->count_main_solver_SAT_time_end ();
-	    if (res){//set the evidence
-	    
-	    }
-	    return res;
-	}
-	
-	/*
-	bool Gic::backward_gic_check (){
-		if (sat_solve (init_->s(), bad_))
-			return true;
-		while (inv_sat_solve (-bad_, bad_)){
-			Cube block_intersect;
-			State *s = get_state ();
-			states_.push_back (s);
-			if (deep_check (s,block_intersect))
-				return true;
-		}
-		return false;
-	}
-	
-	bool Gic::deep_check (State* t, Cube& block_intersect){
-		if (sat_solve (init_, t))
-			return true;
-		inv_solver_->add_clause_from_cube (t->s());
 		//gic::print (t->s());
 		while (inv_sat_solve (-bad_, t)){
 			State *s = get_state ();
-			Cube temp_s = s->s();
-			Cube intersection;
-			intersect (temp_s,t->s(),intersection);
-			if (intersection.empty())
-				intersection = s->s();
-			if (in_initial (intersection))
-				intersection = s->s();
-			
+			bool res = try_reduce (s->s(), t->s());
+			if (res)
+				break;
 			states_.push_back (s);
-			if (deep_check (intersection,temp_s,block_intersect))
+			if (deep_check (s))
 				return true;
 		}
-		Cube mic = get_mic (inv_solver_);
+		Cube mic = get_mic (inv_solver_, t);
 		inv_solver_->add_clause_from_cube (mic);
-		//cout << "block mic " << mic.size() << endl;
-		//gic::print (mic);
+		cout << "block mic " << mic.size() << endl;
+		gic::print (mic);
 		return false;
 	}
-
-	bool Gic::deep_check (Cube &intersect_uc, Cube t, Cube& block_intersect){
-		if (sat_solve (init_, t))
-			return true;
-		//inv_solver_->add_clause_from_cube (t->s());
-		//gic::print (t->s());
-		while (inv_sat_solve (intersect_uc, t)){
-			State *s = get_state ();
-			Cube temp_s = s->s();
-			Cube intersection = intersect_uc;
-			intersect (temp_s,t,intersection);
-			if (intersection.empty())
-				intersection = s->s();
-			if (in_initial (intersection))
-				intersection = s->s();
-			
-			states_.push_back (s);
-			if (deep_check (intersection,temp_s, block_intersect))
-				return true;
-			std::sort (t.begin(), t.end(), gic::comp);
-			if (gic::imply (t,block_intersect)){
-				//cout<<"block works"<<endl;
-				return false;
-			}
-				
-			
-		}
-		//cout<<"try"<<endl;
-		Cube mic = get_mic (inv_solver_);
-		std::sort (mic.begin(), mic.end(), gic::comp);
-		std::sort (intersect_uc.begin(), intersect_uc.end(), gic::comp);
-		if (gic::imply (intersect_uc, mic)){
-			//cout<<"return block"<<endl;
-			block_intersect = mic;
-			inv_solver_->add_clause_from_cube (mic);
-			return false;
-		}
-		else{
-			block_intersect = t;
-			return deep_check (t,t,block_intersect);
-		}
-			
-		//cout << "block mic " << mic.size() << endl;
-		//gic::print (mic);
-		
-	}
-
-
-
-	void Gic::intersect (Cube& main_state, Cube& t, Cube& intersection){
-		Cube tail;
-		Cube perfix;
-		if (intersection.empty()) intersection = t;
-	    for (auto it = intersection.begin(); it != intersection.end(); ++it) {
-	    	if (main_state[abs(*it)-model_->num_inputs ()-1] == *it) 
-	    		perfix.push_back (*it);
-		else 
-			tail.push_back (*it);
-	    }
-		tail.insert (tail.begin (),perfix.begin (),perfix.end());
-		main_state = tail;
-		intersection = perfix;
-
-	}
-	bool Gic::in_initial (Cube &cu){
-		for (auto it = cu.begin();it != cu.end();++it)
-			if (*it > 0) return false;
-		return true;
-	}
-
+	
 	bool Gic::try_reduce (Cube s, Cube t){
 		int start_id = model_->num_inputs()+1;
 		while (true){
 			Cube cu;
+			//cu = s intersect t
 			for (auto it = t.begin(); it != t.end(); ++it){
 				if (s[abs(*it)-start_id] == (*it))
 					cu.push_back (*it);
@@ -309,8 +132,8 @@ namespace gic{
 				tmp[i] = model_->prime (tmp[i]);
 			bool res = inv_solver_->solve_with_assumption (tmp);
 			if (!res){
-				//cout << "block state " << cu.size() << endl;
-				//gic::print (cu);
+				cout << "block state " << cu.size() << endl;
+				gic::print (cu);
 				return true;
 			}
 			State *st = get_state ();
@@ -320,35 +143,53 @@ namespace gic{
 		}
 		return false;
 	}
-	*/
 	
-	Cube Gic::get_mic (SATSolver* solver){
+	Cube Gic::get_mic (SATSolver* solver, State* t){
 		Cube uc = get_uc (solver);
-		/*
+		
 		cout << "before reduce " << uc.size() << endl;
 		gic::print (uc);
 		int max_fail = 3;
 		int count_fail = 0;
 		for (int i = 0; i < uc.size(); ++i){
-			if (inv_sat_solve (uc, i)){
-				++count_fail;
-				if (count_fail >= max_fail)
-					break;
+			if (gic_down (uc, i)){
+				count_fail = 0;
+				i = -1;
 			}
 			else{
-				uc = get_uc (solver);
-				i = -1;
+				if (++count_fail > max_fail)
+					break;
 			}
 			
 		}
 			
 		cout << "after reduce " << uc.size() << endl;
 		gic::print (uc);
-		*/
+		
 		return uc;
 	}
 	
-	bool Gic::inv_sat_solve (Cube& cu, int n){
+	bool Gic::gic_down (Cube& cu, int n){
+		if (!inv_sat_solve (cu, n)){
+			cu = get_uc (inv_solver_);
+			return true;
+		}
+		else{
+			State* s = get_state ();
+			Cube tmp;
+			for (int i = 0; i < cu.size(); ++i){
+				if (i != n)
+					tmp.push_back (cu[i]);
+			}
+			if (try_reduce (tmp, s->s())){
+				cu = get_uc (inv_solver_);
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	bool Gic::inv_sat_solve (const Cube& cu, int n){
 		Cube tmp;
 		for (int i = 0; i < cu.size(); ++i){
 			if (i != n){
@@ -366,34 +207,6 @@ namespace gic{
 		
 		stats_->count_main_solver_SAT_time_start ();
 		//inv_solver_->print_clauses ();
-	    bool res = inv_solver_->solve_with_assumption (assumption);
-	    stats_->count_main_solver_SAT_time_end ();
-	    if (res){//set the evidence
-	    
-	    }
-	    return res;
-	}
-
-	bool Gic::inv_sat_solve (Cube& cu, Cube& t){
-		Cube assumption;
-		Cube cl;
-		cl.insert(cl.begin(),cu.begin(),cu.end());
-		int length = t.size();
-		if (cu.size() == length)
-			inv_solver_->add_clause_from_cube (t);
-		else
-		{
-			int flag = inv_solver_->get_flag();
-			cl.push_back (flag);
-			inv_solver_->add_clause_from_cube (cl);
-			assumption.push_back (flag);
-		}
-		
-		for (auto it = t.begin (); it != t.end (); ++it)
-			assumption.push_back (model_->prime (*it));
-		assumption.push_back (-bad_);
-		
-		stats_->count_main_solver_SAT_time_start ();
 	    bool res = inv_solver_->solve_with_assumption (assumption);
 	    stats_->count_main_solver_SAT_time_end ();
 	    if (res){//set the evidence
@@ -546,19 +359,7 @@ namespace gic{
 	    stats_->count_main_solver_SAT_time_end ();
 	    return res;
 	}	
-
-	bool Gic::sat_solve (State* start, Cube& next){
-		Cube assumption = start->s();
-		for (int i = 0; i < next.size (); ++i){
-			assumption.push_back (model_->prime (next[i]));
-		}
-		stats_->count_main_solver_SAT_time_start ();
-	    bool res = solver_->solve_with_assumption (assumption); 
-	    stats_->count_main_solver_SAT_time_end ();
-	    return res;
-	}
-
-
+	
 	/*
 	bool Gic::inv_sat_solve (Assignment& st, int level){
 		Cube assumption = st;
