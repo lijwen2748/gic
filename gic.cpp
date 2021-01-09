@@ -170,7 +170,7 @@ namespace gic{
 		for (int i  = 0; i < assumption.size (); ++i)
 			assumption[i] = model_->prime (assumption[i]);
 		assumption.push_back (common_flag_);
-			
+		assumption.push_back (-bad_);
 		stats_->count_main_solver_SAT_time_start ();
 		//inv_solver_->print_clauses ();
 	    bool res = inv_solver_->solve_with_assumption (assumption);
