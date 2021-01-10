@@ -89,7 +89,7 @@ namespace gic{
 			if (deep_check (s))
 				return true;
 			//cout << "common_ is " << endl;
-			gic::print (common_);
+			//gic::print (common_);
 			common_.clear ();
 			states_.pop_back ();
 			delete s;
