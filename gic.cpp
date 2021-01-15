@@ -83,7 +83,6 @@ namespace gic{
 		if (sat_solve (init_->s(), bad_))
 			return true;
 		while (inv_sat_solve (-bad_, bad_)){
-			Cube block_intersect;
 			State *s = get_state ();
 			//set_partial (s);
 			states_.push_back (s);
@@ -446,6 +445,7 @@ namespace gic{
 		Cube& st = t->state();
 		for (auto it = st.begin (); it != st.end (); ++it)
 			cl_t.push_back (model_->prime (*it));
+		cl_t.push_back (t_flag);
 		inv_solver_->add_clause_from_cube (cl_t);
 
 		assumption.insert (assumption.begin (),s->state().begin(),s->state().end());
