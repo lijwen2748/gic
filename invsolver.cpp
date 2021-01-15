@@ -27,18 +27,18 @@ namespace gic
 	{
 	    Assignment res;
 	    
-	    // for (int i = 0; i < model_->num_inputs (); i ++)
-	    // {
-	    //     if (i >= model.size ())
-	    //     {//the value is DON'T CARE, so we just set to 0
-	    //         res.push_back (0);
-	    //     }
-	    //     else
-	    //         res.push_back (model[i]);
-	    // }
+	    for (int i = 0; i < model_->num_inputs (); i ++)
+	    {
+	        if (i >= model.size ())
+	        {//the value is DON'T CARE, so we just set to 0
+	            res.push_back (0);
+	        }
+	        else
+	            res.push_back (model[i]);
+	    }
 	        
 		//if (forward)
-		{
+		//{
 		    Assignment tmp;
 		    tmp.resize (model_->num_latches (), 0);
 		    for (int i = model_->num_inputs ()+1; i <= model_->num_inputs () + model_->num_latches (); i ++)
@@ -58,7 +58,7 @@ namespace gic
 		    		    
 		    for (int i = 0; i < tmp.size (); i ++)
 		        res.push_back (tmp[i]);
-		}
+		//}
 		
 		model = res;
 	}

@@ -43,7 +43,7 @@
  	public:
  	    State (const Assignment& latches) : s_ (latches), pre_ (NULL), next_ (NULL) {}
 
- 		State (const Assignment& latches, const bool forward, const bool last = false); 
+ 		State::State (const State *s, const Assignment& inputs, const Assignment& latches, const bool forward, const bool last = false); 
  		
  		State () : pre_(NULL), next_(NULL) {}
 

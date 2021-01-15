@@ -151,9 +151,11 @@ namespace gic
 		
 		State* get_state ();
 		
-		void set_partial (State* s);
+		void set_partial (State* s,State* t);
+
+		bool inv_partial_solve (State* s,State* t);
 		
-		void remove_input (Cube& uc);
+		void remove_input_flag (Cube& uc);
 		
 		void add_invariant_to_solver (Invariant* inv);
 		

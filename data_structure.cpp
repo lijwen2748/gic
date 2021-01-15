@@ -33,26 +33,32 @@
  namespace gic
  {
  
-    State::State (const Assignment& latches, const bool forward, const bool last) 
+    State::State (const State *s, const Assignment& inputs, const Assignment& latches, const bool forward, const bool last) 
  	{
  		if (forward)
  		{
  			pre_ = NULL;
- 			inputs_.clear();
+ 			next_ = const_cast<State*> (s);
+ 			inputs_ = inputs;
  			s_ = latches;
  		}
  		else
  		{
+ 			pre_ = const_cast<State*> (s);
  			next_ = NULL;
  			if (last)
- 				last_inputs_.clear();
+ 				last_inputs_ = inputs;
  			else
- 				inputs_.clear();
+ 				inputs_ = inputs;
  			s_ = latches;
  		}
  		detect_dead_start_ = 0;
  		init_ = false;
  		id_ = id_counter_++;
+ 		if (s == NULL)
+ 		    dep_ = 0;
+ 		else
+ 		    dep_ = s->dep_ + 1;
 		work_count_ = 0;
  	}
  	

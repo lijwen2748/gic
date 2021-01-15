@@ -85,7 +85,7 @@ namespace gic{
 		while (inv_sat_solve (-bad_, bad_)){
 			Cube block_intersect;
 			State *s = get_state ();
-			set_partial (s);
+			//set_partial (s);
 			states_.push_back (s);
 			if (deep_check (s))
 				return true;
@@ -108,7 +108,7 @@ namespace gic{
 		//LOOP_START:
 		while (inv_sat_solve (-bad_, t)){
 			State* s = get_state ();
-			set_partial (s);
+			set_partial (s,t);
 			//update_common_with (s);
 			//if (common_.empty () || common_in_initial ()){
 			//	set_common (s->s ());
@@ -335,8 +335,8 @@ namespace gic{
 		//Cube uc = get_uc (solver);
 		Cube uc = t->s();
 		
-		cout << "before reduce " << uc.size() << endl;
-		gic::print (uc);
+		//cout << "before reduce " << uc.size() << endl;
+		//gic::print (uc);
 		int max_fail = 3;
 		bool done = false;
 		for (int iter = 1; iter <= max_fail; ++iter){
@@ -359,8 +359,8 @@ namespace gic{
 			}
 		}
 			
-		cout << "after reduce " << uc.size() << endl;
-		gic::print (uc);
+		//cout << "after reduce " << uc.size() << endl;
+		//gic::print (uc);
 		
 		return uc;
 	}
@@ -425,15 +425,39 @@ namespace gic{
 	
 	
 	
-	void Gic::set_partial (State* s){
-		bool res = inv_sat_solve (s);
+	void Gic::set_partial (State* s,State* t){
+		bool res = inv_partial_solve (s,t);
 		if (!res){
 			//cout << "get partial state success" << endl;
-			Cube cu = get_uc (inv_solver_);
-			remove_input (cu);
+			Cube cu = get_forward_uc (inv_solver_);
+			remove_input_flag (cu);
 			std::sort (cu.begin(), cu.end(), gic::comp);
 			s->set_partial (cu);
 		}
+	}
+
+	bool Gic::inv_partial_solve (State* s,State* t){
+		
+		Cube cl_t;
+		Cube assumption = s->input ();
+		int t_flag = inv_solver_->get_flag();
+		
+		
+		Cube& st = t->state();
+		for (auto it = st.begin (); it != st.end (); ++it)
+			cl_t.push_back (model_->prime (*it));
+		inv_solver_->add_clause_from_cube (cl_t);
+
+		assumption.insert (assumption.begin (),s->state().begin(),s->state().end());
+		assumption.push_back(t_flag);
+		
+		stats_->count_main_solver_SAT_time_start ();
+	    bool res = inv_solver_->solve_with_assumption (assumption);
+	    stats_->count_main_solver_SAT_time_end ();
+	    if (res){//set the evidence
+	    
+	    }
+	    return res;
 	}
 	
 	
@@ -640,6 +664,19 @@ namespace gic{
 		return uc;
 	}
 	
+	Cube Gic::get_forward_uc (SATSolver* solver) {
+		Cube uc = solver->get_uc ();
+		Cube tmp;
+		int id = model_->max_id ()/2;
+		for (auto it = uc.begin(); it != uc.end(); ++it){
+				if (id >= abs(*it))
+					tmp.push_back (*it);
+		}
+		uc = tmp;
+		assert (!uc.empty ());
+		return uc;
+	}
+	
 	void Gic::mark_transition (State* start, State* next){
 		State *nt = (next == NULL) ? last_ : next; //the value of last_ has not been assigned!
 		start->set_successor (nt);
@@ -647,17 +684,32 @@ namespace gic{
 	}
 	
 	State* Gic::get_state (){
-		Assignment st = inv_solver_->get_state (forward_); //to be done
-		//std::pair<Assignment, Assignment> pa = state_pair (st);
-		State* res = new State (st, forward_);
+		Assignment st = inv_solver_->get_model (); //to be done
+		std::pair<Assignment, Assignment> pa = state_pair (st);
+		State *res = new State (NULL, pa.first, pa.second, forward_, false);
 		
 		return res;
 	}
 	
-	void Gic::remove_input (Cube& uc) {
+	std::pair<Assignment, Assignment> Gic::state_pair (const Assignment& st)
+	{
+	    assert (st.size () >= model_->num_inputs () + model_->num_latches ());
+	    Assignment inputs, latches;
+	    for (int i = 0; i < model_->num_inputs (); i ++)
+	        inputs.push_back (st[i]);
+	    for (int i = model_->num_inputs (); i < st.size (); i ++)
+	    {
+	        if (abs (st[i]) > model_->num_inputs () + model_->num_latches ())
+	            break;
+	        latches.push_back (st[i]);
+	    }
+	    return std::pair<Assignment, Assignment> (inputs, latches);
+	}
+
+	void Gic::remove_input_flag (Cube& uc) {
 		Cube tmp;
 		for (auto it = uc.begin(); it != uc.end(); ++it){
-			if (abs(*it) > model_->num_inputs())
+			if (model_->latch_var (abs(*it)) )
 				tmp.push_back (*it);
 		}
 		uc = tmp;
