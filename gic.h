@@ -164,7 +164,7 @@ namespace gic
 		bool inv_sat_solve (int not_bad, State* t);
 		bool inv_sat_solve (Cube& cu, int n);
 		bool inv_sat_solve (Cube& cu, Cube& t);
-		Cube get_mic (SATSolver* solver);
+		Cube get_mic (SATSolver* solver, State* t);
 		bool try_reduce (Cube s, Cube t);
 		bool in_initial (Cube &cu);
 		

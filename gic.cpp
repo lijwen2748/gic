@@ -85,12 +85,13 @@ namespace gic{
 		while (inv_sat_solve (-bad_, bad_)){
 			Cube block_intersect;
 			State *s = get_state ();
+			set_partial (s);
 			states_.push_back (s);
 			if (deep_check (s))
 				return true;
 			//cout << "common_ is " << endl;
-			gic::print (common_);
-			common_.clear ();
+			//gic::print (common_);
+			//common_.clear ();
 			states_.pop_back ();
 			delete s;
 		}
@@ -100,17 +101,18 @@ namespace gic{
 	bool Gic::deep_check (State* t){
 		if (sat_solve (init_, t))
 			return true;
-		inv_solver_->add_clause_from_cube (t->s());
-		if (common_.empty ())
-			set_common (t->s());
+		inv_solver_->add_clause_from_cube (t->state());
+		//if (common_.empty ())
+			//set_common (t->s());
 			
-		LOOP_START:
-		while (inv_common_sat_solve (-bad_, t)){
+		//LOOP_START:
+		while (inv_sat_solve (-bad_, t)){
 			State* s = get_state ();
-			update_common_with (s);
-			if (common_.empty () || common_in_initial ()){
-				set_common (s->s ());
-			}
+			set_partial (s);
+			//update_common_with (s);
+			//if (common_.empty () || common_in_initial ()){
+			//	set_common (s->s ());
+			//}
 			
 			states_.push_back (s);
 			if (deep_check (s))
@@ -118,13 +120,17 @@ namespace gic{
 			states_.pop_back ();
 			delete s;
 			
+			/*
 			if (is_blocked(t))
 				return false;
 			else{
 				set_common (t->s());
 			}
+			*/
 		}
-		Cube mic = get_mic (inv_solver_);
+		Cube mic = get_mic (inv_solver_, t);
+		inv_solver_->add_clause_from_cube (mic);
+		/*
 		std::sort (mic.begin(), mic.end(), gic::comp);
 		if (gic::imply (common_, mic)){
 			inv_solver_->add_clause_from_cube (mic);
@@ -135,7 +141,7 @@ namespace gic{
 			set_common (mic);
 			goto LOOP_START;
 		}
-		
+		*/
 		return false;
 	}
 	
@@ -325,29 +331,37 @@ namespace gic{
 	}
 	*/
 	
-	Cube Gic::get_mic (SATSolver* solver){
-		Cube uc = get_uc (solver);
-		/*
+	Cube Gic::get_mic (SATSolver* solver, State* t){
+		//Cube uc = get_uc (solver);
+		Cube uc = t->s();
+		
 		cout << "before reduce " << uc.size() << endl;
 		gic::print (uc);
 		int max_fail = 3;
-		int count_fail = 0;
-		for (int i = 0; i < uc.size(); ++i){
-			if (inv_sat_solve (uc, i)){
-				++count_fail;
-				if (count_fail >= max_fail)
+		bool done = false;
+		for (int iter = 1; iter <= max_fail; ++iter){
+			if (done) break;
+			done = true;
+			for (int i = 0; i < uc.size(); ++i){
+				if (!inv_sat_solve (uc, i)){
+					uc = get_uc (solver);
+					if (imply (init_->s(), uc)){
+					for (int j = 0; j < t->s().size(); ++j)
+						if (t->s()[j] != init_->s()[j]){
+							uc.push_back (t->s()[j]);
+							break;
+						}
+					}
+					done = false;
 					break;
-			}
-			else{
-				uc = get_uc (solver);
-				i = -1;
-			}
+				}
 			
+			}
 		}
 			
 		cout << "after reduce " << uc.size() << endl;
 		gic::print (uc);
-		*/
+		
 		return uc;
 	}
 	
@@ -358,6 +372,10 @@ namespace gic{
 				tmp.push_back (cu[i]);
 			}
 		}
+		
+		if (imply (init_->s(), tmp))//included in init_
+			return true;
+		
 		tmp.push_back (inv_solver_->get_flag ());
 		inv_solver_->add_clause_from_cube (tmp);
 		
@@ -406,17 +424,18 @@ namespace gic{
 	}
 	
 	
-	/*
+	
 	void Gic::set_partial (State* s){
 		bool res = inv_sat_solve (s);
 		if (!res){
 			//cout << "get partial state success" << endl;
 			Cube cu = get_uc (inv_solver_);
 			remove_input (cu);
+			std::sort (cu.begin(), cu.end(), gic::comp);
 			s->set_partial (cu);
 		}
 	}
-	*/
+	
 	
 	
 	/*========================helper function==================*/
@@ -524,7 +543,7 @@ namespace gic{
 	
 	bool Gic::inv_sat_solve (int not_bad, State* t) {
 		Cube assumption;
-		Cube& st = t->s();
+		Cube& st = t->state();
 		for (auto it = st.begin (); it != st.end (); ++it)
 			assumption.push_back (model_->prime (*it));
 		assumption.push_back (not_bad);

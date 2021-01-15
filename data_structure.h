@@ -72,6 +72,7 @@
  		inline int depth () {return dep_;}
  		inline Assignment& s () {return s_;}
  		inline Assignment& partial () {return partial_;}
+ 		inline Assignment& state () {return partial_.empty () ? s_ : partial_;}
  		inline State* next () {return next_;}
  		inline State* pre () {return pre_;}
  		inline Assignment& inputs_vec () {return inputs_;}
