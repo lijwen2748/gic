@@ -157,6 +157,8 @@ namespace gic
 		
 		void set_partial (State* s,State* t);
 
+		void set_partial (State* s);
+
 		bool inv_partial_solve (State* s,State* t);
 		
 		void remove_input_flag (Cube& uc);
@@ -169,6 +171,8 @@ namespace gic
 		bool inv_sat_solve (int not_bad, int bad);
 		bool inv_sat_solve (int not_bad, State* t);
 		bool inv_sat_solve (Cube& cu, int n);
+		bool inv_sat_solve (int bad); 
+		bool inv_sat_solve (State* s);
 		bool inv_sat_solve (Cube& cu, Cube& t);
 		Cube get_mic (SATSolver* solver, State* t);
 		bool try_reduce (Cube s, Cube t);

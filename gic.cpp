@@ -82,9 +82,9 @@ namespace gic{
 	bool Gic::backward_gic_check (){
 		if (sat_solve (init_->s(), bad_))
 			return true;
-		while (inv_sat_solve (-bad_, bad_)){
+		while (inv_sat_solve (bad_)){
 			State *s = get_state ();
-			//set_partial (s);
+			set_partial (s);
 			states_.push_back (s);
 			if (deep_check (s))
 				return true;
@@ -338,8 +338,12 @@ namespace gic{
 		//gic::print (uc);
 		int max_fail = 3;
 		bool done = false;
+		//cout<<"try mic"<<endl;
 		for (int iter = 1; iter <= max_fail; ++iter){
-			if (done) break;
+			if (done) {
+				//cout<<"mic win"<<endl;
+				break;
+			}
 			done = true;
 			for (int i = 0; i < uc.size(); ++i){
 				if (!inv_sat_solve (uc, i)){
@@ -422,7 +426,16 @@ namespace gic{
 	    return res;
 	}
 	
-	
+	void Gic::set_partial (State* s){
+		bool res = inv_sat_solve (s);
+		if (!res){
+			//cout << "get partial state success" << endl;
+			Cube cu = get_forward_uc (inv_solver_);
+			remove_input_flag (cu);
+			std::sort (cu.begin(), cu.end(), gic::comp);
+			s->set_partial (cu);
+		}
+	}
 	
 	void Gic::set_partial (State* s,State* t){
 		bool res = inv_partial_solve (s,t);
@@ -564,6 +577,36 @@ namespace gic{
 	    }
 	    return res;
 	}
+
+	bool Gic::inv_sat_solve (int bad){
+		Cube assumption;
+		assumption.push_back (bad);
+		
+		stats_->count_main_solver_SAT_time_start ();
+		//inv_solver_->print_clauses ();
+	    bool res = inv_solver_->solve_with_assumption (assumption);
+	    stats_->count_main_solver_SAT_time_end ();
+	    if (res){//set the evidence
+	    
+	    }
+	    return res;
+	}
+
+	bool Gic::inv_sat_solve (State* s){
+		Cube assumption = s->input ();
+		Cube& st = s->state();
+		assumption.insert (assumption.begin(),st.begin(),st.end());
+		assumption.push_back (-bad_);
+		stats_->count_main_solver_SAT_time_start ();
+		//inv_solver_->print_clauses ();
+	    bool res = inv_solver_->solve_with_assumption (assumption);
+	    stats_->count_main_solver_SAT_time_end ();
+	    if (res){//set the evidence
+	    
+	    }
+	    return res;
+	}	
+
 	
 	bool Gic::inv_sat_solve (int not_bad, State* t) {
 		Cube assumption;
