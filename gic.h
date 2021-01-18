@@ -174,9 +174,11 @@ namespace gic
 		bool inv_sat_solve (int bad); 
 		bool inv_sat_solve (State* s);
 		bool inv_sat_solve (Cube& cu, Cube& t);
+		bool inv_sat_solve (State* init, Cube& t);
 		Cube get_mic (SATSolver* solver, State* t);
 		bool try_reduce (Cube s, Cube t);
 		bool in_initial (Cube &cu);
+		Cube complement (Cube& cu1, Cube& cu2);
 		
 		void set_common (Cube& st);
 		bool common_in_initial ();

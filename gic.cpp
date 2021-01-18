@@ -348,13 +348,13 @@ namespace gic{
 			for (int i = 0; i < uc.size(); ++i){
 				if (!inv_sat_solve (uc, i)){
 					uc = get_uc (solver);
-					if (imply (init_->s(), uc)){
-					for (int j = 0; j < t->s().size(); ++j)
-						if (t->s()[j] != init_->s()[j]){
-							uc.push_back (t->s()[j]);
-							break;
-						}
+					Cube uc_comp = complement (t->state(), uc);
+					while (!inv_sat_solve (init_, uc)){
+						assert (!uc_comp.empty ());
+						uc.push_back (*(uc_comp.begin()));
+						uc_comp.erase (uc_comp.begin());
 					}
+					
 					done = false;
 					break;
 				}
@@ -368,6 +368,18 @@ namespace gic{
 		return uc;
 	}
 	
+	Cube Gic::complement (Cube& cu1, Cube& cu2){
+		Cube res;
+		hash_set<int> tmp_set;
+		for (auto it = cu2.begin(); it != cu2.end (); ++it)
+			tmp_set.insert (*it);
+		for (auto it = cu1.begin(); it != cu1.end (); ++it){
+			if (tmp_set.find (*it) == tmp_set.end ())
+				res.push_back (*it);
+		}
+		return res;
+	}
+	
 	bool Gic::inv_sat_solve (Cube& cu, int n){
 		Cube tmp;
 		for (int i = 0; i < cu.size(); ++i){
@@ -376,7 +388,7 @@ namespace gic{
 			}
 		}
 		
-		if (imply (init_->s(), tmp))//included in init_
+		if (inv_sat_solve (init_->s(), tmp))//included in init_
 			return true;
 		
 		tmp.push_back (inv_solver_->get_flag ());
@@ -397,8 +409,33 @@ namespace gic{
 	    }
 	    return res;
 	}
-
+	
+	bool Gic::inv_sat_solve (State* init, Cube& t){
+		Cube assumption = init->s();
+		Cube cu = t;
+		cu.push_back (inv_solver_->get_flag ());
+		inv_solver_->add_clause_from_cube (cu);
+		
+		assumption.push_back (cu.back ());
+		stats_->count_main_solver_SAT_time_start ();
+	    bool res = inv_solver_->solve_with_assumption (assumption);
+	    stats_->count_main_solver_SAT_time_end ();
+	    if (res){//set the evidence
+	    
+	    }
+	    return res;
+	}
 	bool Gic::inv_sat_solve (Cube& cu, Cube& t){
+		Cube assumption = cu;
+		assumption.insert (assumption.begin(), t.begin(), t.end());
+		stats_->count_main_solver_SAT_time_start ();
+	    bool res = inv_solver_->solve_with_assumption (assumption);
+	    stats_->count_main_solver_SAT_time_end ();
+	    if (res){//set the evidence
+	    
+	    }
+	    return res;
+	/*
 		Cube assumption;
 		Cube cl;
 		cl.insert(cl.begin(),cu.begin(),cu.end());
@@ -424,6 +461,7 @@ namespace gic{
 	    
 	    }
 	    return res;
+	*/
 	}
 	
 	void Gic::set_partial (State* s){
