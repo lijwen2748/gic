@@ -336,7 +336,7 @@ namespace gic{
 		
 		//cout << "before reduce " << uc.size() << endl;
 		//gic::print (uc);
-		int max_fail = 3;
+		int max_fail = 10;
 		bool done = false;
 		//cout<<"try mic"<<endl;
 		for (int iter = 1; iter <= max_fail; ++iter){
