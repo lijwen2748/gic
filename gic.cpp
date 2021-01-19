@@ -107,6 +107,11 @@ namespace gic{
 		//LOOP_START:
 		while (inv_sat_solve (-bad_, t)){
 			State* s = get_state ();
+			Cube mic = get_mic (inv_solver_, s);
+			if (mic.size() != s->state().size()){
+				inv_solver_->add_clause_from_cube (mic);		
+				return false;	
+			}
 			set_partial (s,t);
 			//update_common_with (s);
 			//if (common_.empty () || common_in_initial ()){
@@ -332,7 +337,7 @@ namespace gic{
 	
 	Cube Gic::get_mic (SATSolver* solver, State* t){
 		//Cube uc = get_uc (solver);
-		Cube uc = t->s();
+		Cube uc = t->state();
 		
 		//cout << "before reduce " << uc.size() << endl;
 		//gic::print (uc);
