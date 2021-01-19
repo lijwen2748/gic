@@ -101,17 +101,19 @@ namespace gic{
 		if (sat_solve (init_, t))
 			return true;
 		inv_solver_->add_clause_from_cube (t->state());
+		
+		Cube mic = get_mic (inv_solver_, t);
+		if (mic.size() != t->state().size()){//unsuccessful
+			inv_solver_->add_clause_from_cube (mic);		
+			return false;	
+		}
 		//if (common_.empty ())
 			//set_common (t->s());
 			
 		//LOOP_START:
 		while (inv_sat_solve (-bad_, t)){
 			State* s = get_state ();
-			Cube mic = get_mic (inv_solver_, s);
-			if (mic.size() != s->state().size()){
-				inv_solver_->add_clause_from_cube (mic);		
-				return false;	
-			}
+			
 			set_partial (s,t);
 			//update_common_with (s);
 			//if (common_.empty () || common_in_initial ()){
@@ -132,7 +134,7 @@ namespace gic{
 			}
 			*/
 		}
-		Cube mic = get_mic (inv_solver_, t);
+		mic = get_mic (inv_solver_, t);
 		inv_solver_->add_clause_from_cube (mic);
 		/*
 		std::sort (mic.begin(), mic.end(), gic::comp);
