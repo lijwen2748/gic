@@ -63,6 +63,10 @@ namespace gic{
 	    return res;
 	}	
 	
+	
+
+
+
 
 	bool Gic::gic_check (){
 		if (verbose_)
@@ -82,17 +86,22 @@ namespace gic{
 	bool Gic::backward_gic_check (){
 		if (sat_solve (init_->s(), bad_))
 			return true;
-		while (inv_sat_solve (bad_)){
-			State *s = get_state ();
-			set_partial (s);
-			states_.push_back (s);
-			if (deep_check (s))
-				return true;
-			//cout << "common_ is " << endl;
-			//gic::print (common_);
-			//common_.clear ();
-			states_.pop_back ();
-			delete s;
+		initialize_frame ();  //to be done
+		while (true){
+			//blocking stage
+			while (inv_sat_solve (frame[k],-bad_)){  //to be done
+				State* c = get_state ();
+				if (!rec_block (c,k)) return false; //to be done
+			}
+			//propagation stage
+			k = k+1;
+			for (int i = 0;i<k;i++){
+				for (auto it = F[i].begin();it != F[i].end();++it){
+					F[i+1].push_back (c); 
+				}
+				if (F[i+1] == F[i]) return ture;
+			}
+			
 		}
 		return false;
 	}
