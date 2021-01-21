@@ -25,6 +25,7 @@
  #define DATA_STRUCTURE_H
  
  #include <vector>
+ #include <set>
  #include <stdlib.h>
  #include <iostream>
  #include <fstream>

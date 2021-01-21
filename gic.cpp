@@ -93,7 +93,7 @@ namespace gic{
 		set_new_frame ();  
 		while (true){
 			//blocking stage
-			while (inv_sat_solve (F_[frame_level_],-bad_)){  //to be done
+			while (inv_sat_solve(frame_level_,-bad_)){  //check whether bad state intersect with current frame
 				State* c = get_state ();
 				if (!rec_block (c,frame_level_)) return false; //to be done
 			}
@@ -129,7 +129,7 @@ namespace gic{
 	}
 
 
-
+	/*
 	bool Gic::deep_check (State* t){
 		if (sat_solve (init_, t))
 			return true;
@@ -159,17 +159,17 @@ namespace gic{
 			states_.pop_back ();
 			delete s;
 			
-			/*
+			
 			if (is_blocked(t))
 				return false;
 			else{
 				set_common (t->s());
 			}
-			*/
+			
 		}
 		mic = get_mic (inv_solver_, t);
 		inv_solver_->add_clause_from_cube (mic);
-		/*
+		
 		std::sort (mic.begin(), mic.end(), gic::comp);
 		if (gic::imply (common_, mic)){
 			inv_solver_->add_clause_from_cube (mic);
@@ -180,9 +180,11 @@ namespace gic{
 			set_common (mic);
 			goto LOOP_START;
 		}
-		*/
+		
 		return false;
 	}
+
+	*/
 	
 	void Gic::set_common (Cube& st){
 		common_ = st;
@@ -502,11 +504,21 @@ namespace gic{
 	    return res;
 	}
 	
-	bool Gic::inv_sat_solve (int not_bad, int bad) {
+	bool Gic::inv_sat_solve (int frame_level, int not_bad) {
 		Cube assumption;
 		assumption.push_back (not_bad);
-		assumption.push_back (model_->prime (bad));
+		int frame_size = F_[frame_level]->frame.size();
 		
+		for (int i = 0;i < frame_size;i++){
+
+			int flag = F_[frame_level]->frame[i].back();
+			if (increase_flag_.find (flag) == increase_flag_.end()){
+				Clause& cl = F_[frame_level]->frame[i];
+				inv_solver_->add_clause_from_cube (cl);
+			}
+			assumption.push_back (flag);
+			
+		}
 		stats_->count_main_solver_SAT_time_start ();
 		//inv_solver_->print_clauses ();
 	    bool res = inv_solver_->solve_with_assumption (assumption);

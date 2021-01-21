@@ -93,11 +93,13 @@ namespace gic
 		
 		struct Frame
 		{
-			vector<Clause> frame;
-			vector<int> flag_vec;
+			vector<Clause> frame; //the last element in frame[i] is the flag
+			//vector<int> flag_vec;
 		};
 
 		vector<Frame*> F_;
+
+		set<int> increase_flag_;
 
 		int frame_level_;
 		
@@ -139,10 +141,6 @@ namespace gic
 		void gic_finalization ();	
 
 		bool immediate_satisfiable ();
-		
-		bool inv_check (int bad, State*& s);
-		
-		bool inv_check (State* t, int level);
 		
 		bool sat_solve (Assignment& st, int bad);
 
@@ -186,7 +184,8 @@ namespace gic
 		bool frame_is_equal (int& a, int& b);
 		void add_mic_to_frame (Cube& mic);
 		bool deep_check (State* t);
-		bool inv_sat_solve (int not_bad, int bad);
+
+		bool inv_sat_solve (int frame_level, int not_bad);
 		bool inv_sat_solve (int not_bad, State* t);
 		bool inv_sat_solve (Cube& cu, int n);
 		bool inv_sat_solve (int bad); 
