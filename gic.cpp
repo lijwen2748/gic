@@ -80,32 +80,56 @@ namespace gic{
 		if (forward_) 
 			return false;//forward_gic_check ();
 		else 
-		 	return backward_gic_check ();
+		 	return pdr_check ();
 	}
 	
-	bool Gic::backward_gic_check (){
+	bool Gic::pdr_check (){
 		if (sat_solve (init_->s(), bad_))
 			return true;
-		initialize_frame ();  //to be done
+		Frame* new_frame = new Frame();
+		new_frame->frame.push_back (init_->s());
+		F_.push_back (new_frame);
+		add_frame_level ();
+		set_new_frame ();  
 		while (true){
 			//blocking stage
-			while (inv_sat_solve (frame[k],-bad_)){  //to be done
+			while (inv_sat_solve (F_[frame_level_],-bad_)){  //to be done
 				State* c = get_state ();
-				if (!rec_block (c,k)) return false; //to be done
+				if (!rec_block (c,frame_level_)) return false; //to be done
 			}
 			//propagation stage
-			k = k+1;
-			for (int i = 0;i<k;i++){
-				for (auto it = F[i].begin();it != F[i].end();++it){
-					F[i+1].push_back (c); 
+			add_frame_level ();
+			for (int i = 0;i<frame_level_;i++){
+				for (auto it = F_[i]->frame.begin();it != F_[i]->frame.end();++it){
+					if (!inv_sat_solve (*it,i-1))
+						F_[i+1]->frame.push_back (*it); 
 				}
-				if (F[i+1] == F[i]) return ture;
+				if (frame_is_equal (i,i+1)) return true;
 			}
 			
 		}
 		return false;
 	}
+
+	void Gic::set_new_frame (){
+		Frame* new_frame = new Frame();
+		new_frame->frame.push_back (init_->s());
+		F_.push_back (new_frame);
+	}
 	
+	bool Gic::rec_block (State* s,int i){
+		if (i == 0) return false;
+		while (inv_sat_solve (s,i-1)){
+			State* pre_s = get_predecessor (i-1,s);
+			if (!rec_block (pre_s,i-1)) return false;
+		}
+		Cube mic = get_mic(s,i);
+		add_mic_to_frame (mic);   //add neg mic as clause
+		return true;
+	}
+
+
+
 	bool Gic::deep_check (State* t){
 		if (sat_solve (init_, t))
 			return true;
@@ -205,146 +229,7 @@ namespace gic{
 	    return res;
 	}
 	
-	/*
-	bool Gic::backward_gic_check (){
-		if (sat_solve (init_->s(), bad_))
-			return true;
-		while (inv_sat_solve (-bad_, bad_)){
-			Cube block_intersect;
-			State *s = get_state ();
-			states_.push_back (s);
-			if (deep_check (s,block_intersect))
-				return true;
-		}
-		return false;
-	}
-	
-	bool Gic::deep_check (State* t, Cube& block_intersect){
-		if (sat_solve (init_, t))
-			return true;
-		inv_solver_->add_clause_from_cube (t->s());
-		//gic::print (t->s());
-		while (inv_sat_solve (-bad_, t)){
-			State *s = get_state ();
-			Cube temp_s = s->s();
-			Cube intersection;
-			intersect (temp_s,t->s(),intersection);
-			if (intersection.empty())
-				intersection = s->s();
-			if (in_initial (intersection))
-				intersection = s->s();
-			
-			states_.push_back (s);
-			if (deep_check (intersection,temp_s,block_intersect))
-				return true;
-		}
-		Cube mic = get_mic (inv_solver_);
-		inv_solver_->add_clause_from_cube (mic);
-		//cout << "block mic " << mic.size() << endl;
-		//gic::print (mic);
-		return false;
-	}
 
-	bool Gic::deep_check (Cube &intersect_uc, Cube t, Cube& block_intersect){
-		if (sat_solve (init_, t))
-			return true;
-		//inv_solver_->add_clause_from_cube (t->s());
-		//gic::print (t->s());
-		while (inv_sat_solve (intersect_uc, t)){
-			State *s = get_state ();
-			Cube temp_s = s->s();
-			Cube intersection = intersect_uc;
-			intersect (temp_s,t,intersection);
-			if (intersection.empty())
-				intersection = s->s();
-			if (in_initial (intersection))
-				intersection = s->s();
-			
-			states_.push_back (s);
-			if (deep_check (intersection,temp_s, block_intersect))
-				return true;
-			std::sort (t.begin(), t.end(), gic::comp);
-			if (gic::imply (t,block_intersect)){
-				//cout<<"block works"<<endl;
-				return false;
-			}
-				
-			
-		}
-		//cout<<"try"<<endl;
-		Cube mic = get_mic (inv_solver_);
-		std::sort (mic.begin(), mic.end(), gic::comp);
-		std::sort (intersect_uc.begin(), intersect_uc.end(), gic::comp);
-		if (gic::imply (intersect_uc, mic)){
-			//cout<<"return block"<<endl;
-			block_intersect = mic;
-			inv_solver_->add_clause_from_cube (mic);
-			return false;
-		}
-		else{
-			block_intersect = t;
-			return deep_check (t,t,block_intersect);
-		}
-			
-		//cout << "block mic " << mic.size() << endl;
-		//gic::print (mic);
-		
-	}
-
-
-
-	void Gic::intersect (Cube& main_state, Cube& t, Cube& intersection){
-		Cube tail;
-		Cube perfix;
-		if (intersection.empty()) intersection = t;
-	    for (auto it = intersection.begin(); it != intersection.end(); ++it) {
-	    	if (main_state[abs(*it)-model_->num_inputs ()-1] == *it) 
-	    		perfix.push_back (*it);
-		else 
-			tail.push_back (*it);
-	    }
-		tail.insert (tail.begin (),perfix.begin (),perfix.end());
-		main_state = tail;
-		intersection = perfix;
-
-	}
-	bool Gic::in_initial (Cube &cu){
-		for (auto it = cu.begin();it != cu.end();++it)
-			if (*it > 0) return false;
-		return true;
-	}
-
-	bool Gic::try_reduce (Cube s, Cube t){
-		int start_id = model_->num_inputs()+1;
-		while (true){
-			Cube cu;
-			for (auto it = t.begin(); it != t.end(); ++it){
-				if (s[abs(*it)-start_id] == (*it))
-					cu.push_back (*it);
-			}
-			if (cu.empty ())
-				return false;
-			if (gic::imply (init_->s(), cu))
-				return false;
-			Cube tmp = cu;
-			tmp.push_back (inv_solver_->get_flag());
-			inv_solver_->add_clause_from_cube (tmp);
-			for (int i = 0; i < tmp.size()-1; ++i)
-				tmp[i] = model_->prime (tmp[i]);
-			bool res = inv_solver_->solve_with_assumption (tmp);
-			if (!res){
-				//cout << "block state " << cu.size() << endl;
-				//gic::print (cu);
-				return true;
-			}
-			State *st = get_state ();
-			s = st->s();
-			t = cu;
-				
-		}
-		return false;
-	}
-	*/
 	
 	Cube Gic::get_mic (SATSolver* solver, State* t){
 		//Cube uc = get_uc (solver);

@@ -91,6 +91,16 @@ namespace gic
 		
 		std::vector<Invariant> invariants_;
 		
+		struct Frame
+		{
+			vector<Clause> frame;
+			vector<int> flag_vec;
+		};
+
+		vector<Frame*> F_;
+
+		int frame_level_;
+		
 
 		/*****main function******/
 
@@ -115,6 +125,10 @@ namespace gic
 		inline void delete_inv_solver (){
 			delete inv_solver_;
 			inv_solver_ = NULL;
+		}
+
+		inline void add_frame_level(){
+			frame_level_ = F_.size();
 		}
 
 		
@@ -166,7 +180,11 @@ namespace gic
 		void add_invariant_to_solver (Invariant* inv);
 		
 		/*************backward*************/
-		bool backward_gic_check ();
+		bool pdr_check ();
+		void set_new_frame ();
+		bool rec_block (State* c,int k);
+		bool frame_is_equal (int& a, int& b);
+		void add_mic_to_frame (Cube& mic);
 		bool deep_check (State* t);
 		bool inv_sat_solve (int not_bad, int bad);
 		bool inv_sat_solve (int not_bad, State* t);
