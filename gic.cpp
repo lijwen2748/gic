@@ -117,10 +117,10 @@ namespace gic{
 		F_.push_back (new_frame);
 	}
 	
-	bool Gic::rec_block (State* s,int i){
+	bool Gic::rec_block (Cube& s,int i){
 		if (i == 0) return false;
 		while (inv_sat_solve (s,i-1)){
-			State* pre_s = get_predecessor (i-1,s);
+			Cube pre_s = get_predecessor (i-1,s);
 			if (!rec_block (pre_s,i-1)) return false;
 		}
 		Cube mic = get_mic(s,i);
@@ -282,7 +282,7 @@ namespace gic{
 		}
 		return res;
 	}
-	
+	/*
 	bool Gic::inv_sat_solve (Cube& cu, int n){
 		Cube tmp;
 		for (int i = 0; i < cu.size(); ++i){
@@ -312,6 +312,7 @@ namespace gic{
 	    }
 	    return res;
 	}
+	*/
 	
 	bool Gic::inv_sat_solve (State* init, Cube& t){
 		Cube assumption = init->s();
@@ -367,16 +368,7 @@ namespace gic{
 	*/
 	}
 	
-	void Gic::set_partial (State* s){
-		bool res = inv_sat_solve (s);
-		if (!res){
-			//cout << "get partial state success" << endl;
-			Cube cu = get_forward_uc (inv_solver_);
-			remove_input_flag (cu);
-			std::sort (cu.begin(), cu.end(), gic::comp);
-			s->set_partial (cu);
-		}
-	}
+	
 	
 	void Gic::set_partial (State* s,State* t){
 		bool res = inv_partial_solve (s,t);
@@ -528,6 +520,40 @@ namespace gic{
 	    }
 	    return res;
 	}
+
+	bool Gic::inv_sat_solve (Cube& s, int pre_level){
+		Cube assumption;
+		
+		int pre_size = F_[pre_level]->frame.size();
+		//push frame as clasuse
+		for (int i = 0;i < pre_size;i++){
+			int flag = F_[pre_level]->frame[i].back();
+			if (increase_flag_.find (flag) == increase_flag_.end()){
+				Clause& cl = F_[pre_level]->frame[i];
+				inv_solver_->add_clause_from_cube (cl);
+			}
+			assumption.push_back (flag);	
+		}
+		//push !s as clause
+		int flag = inv_solver_->get_flag();
+		Clause cl = s;
+		cl.push_back (flag);
+		inv_solver_->add_clause_from_cube (cl);
+		assumption.push_back (flag);
+
+		for (auto it = s.begin (); it != s.end (); ++it)
+			assumption.push_back (model_->prime (*it));
+
+
+		stats_->count_main_solver_SAT_time_start ();
+	    bool res = inv_solver_->solve_with_assumption (assumption);
+	    stats_->count_main_solver_SAT_time_end ();
+	    if (res){//set the evidence
+	    
+	    }
+	    return res;
+	}
+
 
 	bool Gic::inv_sat_solve (int bad){
 		Cube assumption;
