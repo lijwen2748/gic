@@ -167,9 +167,8 @@ namespace gic
 
 		std::pair<Assignment, Assignment> state_pair (const Assignment& st);
 		
-		void set_partial (State* s,State* t);
+		void get_predecessor (Cube s,State* t);
 
-		void set_partial (State* s);
 
 		bool inv_partial_solve (State* s,State* t);
 		
@@ -180,18 +179,19 @@ namespace gic
 		/*************backward*************/
 		bool pdr_check ();
 		void set_new_frame ();
-		bool rec_block (State* c,int k);
+		bool rec_block (Cube& s,int k);
 		bool frame_is_equal (int& a, int& b);
 		void add_mic_to_frame (Cube& mic);
 		bool deep_check (State* t);
 
 		bool inv_sat_solve (int frame_level, int not_bad);
-		bool inv_sat_solve (int not_bad, State* t);
-		bool inv_sat_solve (Cube& cu, int n);
+		bool inv_sat_solve (Cube& s, int frame_level);
+		bool inv_sat_solve (State* init, Cube& t);
+
 		bool inv_sat_solve (int bad); 
 		bool inv_sat_solve (State* s);
 		bool inv_sat_solve (Cube& cu, Cube& t);
-		bool inv_sat_solve (State* init, Cube& t);
+		
 		Cube get_mic (SATSolver* solver, State* t);
 		bool try_reduce (Cube s, Cube t);
 		bool in_initial (Cube &cu);
