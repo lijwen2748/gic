@@ -96,7 +96,7 @@ namespace gic{
 			//blocking stage
 			while (inv_sat_solve(frame_level_,-bad_)){  //check whether bad state intersect with current frame
 				State* c = get_state ();
-				if (!rec_block (c->s(),frame_level_)) return false; //to be done
+				if (!rec_block (c->s(),frame_level_)) return false; 
 			}
 			//propagation stage
 			set_new_frame (); 
@@ -120,10 +120,14 @@ namespace gic{
 	}
 	
 	bool Gic::rec_block (Cube& s,int i){
-		if (i == 0) return false;
-		while (inv_sat_solve (s,i-1)){
-			Cube pre_s = get_predecessor (s);
-			if (!rec_block (pre_s,i-1)) return false;
+		if (i == 1){
+			if (inv_initial_solve (s)) return false;
+		}
+		else{
+			while (inv_sat_solve (s,i-1)){
+				Cube pre_s = get_predecessor (s);
+				if (!rec_block (pre_s,i-1)) return false;
+			}	
 		}
 		Cube mic = get_mic(inv_solver_,s,i);
 		add_mic_to_frame (mic,i);   //add mic as cube,used as neg clause
@@ -214,7 +218,7 @@ namespace gic{
 	    }
 	    return res;
 	}
-
+	
 	bool Gic::inv_sat_solve (Cube& cu, Cube& t){
 		Cube assumption = cu;
 		assumption.insert (assumption.begin(), t.begin(), t.end());
@@ -226,7 +230,21 @@ namespace gic{
 	    }
 	    return res;
 	}
-	
+
+	bool Gic::inv_initial_solve (Cube& t){
+		Cube assumption = init_->s();
+
+		for (auto it = t.begin(); it != t.end(); ++it)
+			assumption.push_back (model_->prime(*it));
+
+		stats_->count_main_solver_SAT_time_start ();
+	    bool res = inv_solver_->solve_with_assumption (assumption);
+	    stats_->count_main_solver_SAT_time_end ();
+	    if (res){//set the evidence
+	    
+	    }
+	    return res;
+	}
 	
 	
 	Cube Gic::get_predecessor (Cube& s){
@@ -340,7 +358,7 @@ namespace gic{
 
 	    return res;
 	}
-	
+	//used
 	bool Gic::sat_solve (Assignment& st, int bad) {
 		Cube assumption = st;
 		assumption.push_back (model_->prime (bad));
@@ -353,7 +371,7 @@ namespace gic{
 	    }
 	    return res;
 	}
-	
+	//used
 	bool Gic::inv_sat_solve (int frame_level, int not_bad) {
 		Cube assumption;
 		assumption.push_back (not_bad);
@@ -378,7 +396,7 @@ namespace gic{
 	    }
 	    return res;
 	}
-
+	//used
 	bool Gic::inv_sat_solve (Cube& s, int pre_level){
 		Cube assumption;
 		

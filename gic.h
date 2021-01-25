@@ -139,10 +139,6 @@ namespace gic
 		bool immediate_satisfiable ();
 		
 		bool sat_solve (Assignment& st, int bad);
-
-		bool sat_solve (State* start, State* next);
-
-		bool sat_solve (State* start, Cube& next);
 		
 		//bool inv_sat_solve (Assignment& st, int level);
 		
@@ -184,6 +180,7 @@ namespace gic
 		bool inv_sat_solve (State* init, Cube& t);
 		bool inv_sat_solve (Cube& cu, int n,int frame_level);
 		bool inv_sat_solve (Cube& cu, Cube& t);
+		bool inv_initial_solve (Cube& t); //if t is reachable from initial states
 		
 		Cube get_mic (SATSolver* solver, Cube& s,int& frame_level);
 		bool try_reduce (Cube s, Cube t);
