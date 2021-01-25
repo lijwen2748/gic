@@ -129,10 +129,6 @@ namespace gic
 			inv_solver_ = NULL;
 		}
 
-		inline void add_frame_level(){
-			frame_level_ = F_.size();
-		}
-
 		
 		/*****helper function******/
 
@@ -167,10 +163,9 @@ namespace gic
 
 		std::pair<Assignment, Assignment> state_pair (const Assignment& st);
 		
-		void get_predecessor (Cube s,State* t);
+		Cube get_predecessor (Cube& s);
 
-
-		bool inv_partial_solve (State* s,State* t);
+		bool inv_partial_solve (State* F_state,Cube& s);
 		
 		void remove_input_flag (Cube& uc);
 		
@@ -180,19 +175,17 @@ namespace gic
 		bool pdr_check ();
 		void set_new_frame ();
 		bool rec_block (Cube& s,int k);
-		bool frame_is_equal (int& a, int& b);
-		void add_mic_to_frame (Cube& mic);
+		bool frame_is_equal (int& i);
+		void add_mic_to_frame (Cube& mic,int frame_level);
 		bool deep_check (State* t);
 
 		bool inv_sat_solve (int frame_level, int not_bad);
 		bool inv_sat_solve (Cube& s, int frame_level);
 		bool inv_sat_solve (State* init, Cube& t);
-
-		bool inv_sat_solve (int bad); 
-		bool inv_sat_solve (State* s);
+		bool inv_sat_solve (Cube& cu, int n,int frame_level);
 		bool inv_sat_solve (Cube& cu, Cube& t);
 		
-		Cube get_mic (SATSolver* solver, State* t);
+		Cube get_mic (SATSolver* solver, Cube& s,int& frame_level);
 		bool try_reduce (Cube s, Cube t);
 		bool in_initial (Cube &cu);
 		Cube complement (Cube& cu1, Cube& cu2);
