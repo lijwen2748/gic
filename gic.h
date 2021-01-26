@@ -93,13 +93,13 @@ namespace gic
 		
 		struct Frame
 		{
-			vector<Clause> frame; //the last element in frame[i] is the flag
+			std::vector<Clause> frame; //the last element in frame[i] is the flag
 			//vector<int> flag_vec;
 		};
 
-		vector<Frame*> F_;
+		std::vector<Frame*> F_;
 
-		set<int> increase_flag_;
+		std::set<int> increase_flag_;
 
 		int frame_level_;
 		

@@ -179,8 +179,8 @@ namespace gic{
 		Cube frame_i;
 		Cube frame_ni;
 		for(int j = 0;j < frame_size;j++){
-			frame_i.push_back(F_[i]->frame[j]);
-			frame_i.push_back(F_[i+1]->frame[j]);
+			frame_i.push_back(F_[i]->frame[j].back());
+			frame_ni.push_back(F_[i+1]->frame[j].back());
 		}
 		sort (frame_i.begin(),frame_i.end());
 		sort (frame_ni.begin(),frame_ni.end());
