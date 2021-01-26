@@ -381,6 +381,7 @@ namespace gic{
 
 			int flag = F_[frame_level]->frame[i].back();
 			if (increase_flag_.find (flag) == increase_flag_.end()){
+				increase_flag_.insert (flag);
 				Clause& cl = F_[frame_level]->frame[i];
 				inv_solver_->add_clause_from_cube (cl);
 			}
@@ -405,6 +406,7 @@ namespace gic{
 		for (int i = 0;i < pre_size;i++){
 			int flag = F_[pre_level]->frame[i].back();
 			if (increase_flag_.find (flag) == increase_flag_.end()){
+				increase_flag_.insert (flag);
 				Clause& cl = F_[pre_level]->frame[i];
 				inv_solver_->add_clause_from_cube (cl);
 			}
@@ -456,6 +458,7 @@ namespace gic{
 		for (int i = 0;i < pre_size;i++){
 			int flag = F_[frame_level]->frame[i].back();
 			if (increase_flag_.find (flag) == increase_flag_.end()){
+				increase_flag_.insert (flag);
 				Clause& cl = F_[frame_level]->frame[i];
 				inv_solver_->add_clause_from_cube (cl);
 			}
