@@ -129,6 +129,7 @@ namespace gic{
 				if (!rec_block (pre_s,i-1)) return false;
 			}	
 		}
+		//cout<<"get mic"<<endl;
 		Cube mic = get_mic(inv_solver_,s,i);
 		add_mic_to_frame (mic,i);   //add mic as cube,used as neg clause
 		return true;
@@ -140,7 +141,7 @@ namespace gic{
 		
 		//cout << "before reduce " << uc.size() << endl;
 		//gic::print (uc);
-		int max_fail = 10;
+		int max_fail = 3;
 		bool done = false;
 		//cout<<"try mic"<<endl;
 		for (int iter = 1; iter <= max_fail; ++iter){
@@ -150,7 +151,8 @@ namespace gic{
 			}
 			done = true;
 			for (int i = 0; i < uc.size(); ++i){
-				if (!inv_sat_solve (uc, i)){
+				if (!inv_sat_solve (uc, i ,frame_level)){
+					//cout<<"new uc"<<endl;
 					uc = get_uc (solver);
 					Cube uc_comp = complement (s, uc);
 					while (!inv_sat_solve (init_, uc)){
@@ -479,7 +481,7 @@ namespace gic{
 		Cube temp = mic;
 		int flag = inv_solver_->get_flag();
 		temp.push_back (flag);
-		for (int i = 0;i < frame_level;i++){
+		for (int i = 1;i <= frame_level;i++){
 			F_[i]->frame.push_back (temp);
 		}
 	}
