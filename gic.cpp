@@ -94,20 +94,21 @@ namespace gic{
 		
 		while (true){
 			//blocking stage
-			while (inv_sat_solve(frame_level_,-bad_)){  //check whether bad state intersect with current frame
+			while (inv_sat_solve(frame_level_,bad_)){  //check whether bad state intersect with current frame
 				State* c = get_state ();
-				if (!rec_block (c->s(),frame_level_)) return false; 
+				if (!rec_block (c->s(),frame_level_)) return true; 
 			}
 			//propagation stage
 			set_new_frame (); 
+			cout<<"add new frame"<<endl;
 			
 			for (int i = 1;i<frame_level_;i++){
 				for (auto it = F_[i]->frame.begin();it != F_[i]->frame.end();++it){
-					if (!inv_sat_solve (*it,i-1))
+					if (!inv_sat_solve (*it,i))
 						F_[i+1]->frame.push_back (*it); 
 				}
 				//test if F[i] is equal to F[i+1]
-				if (frame_is_equal (i)) return true;
+				if (frame_is_equal (i)) return false;
 			}
 		}
 		return false;
@@ -125,7 +126,9 @@ namespace gic{
 		}
 		else{
 			while (inv_sat_solve (s,i-1)){
+				//cout<<"before partial "<<s.size()<<endl;
 				Cube pre_s = get_predecessor (s);
+				//cout<<"before partial "<<pre_s.size()<<endl;
 				if (!rec_block (pre_s,i-1)) return false;
 			}	
 		}
@@ -141,7 +144,7 @@ namespace gic{
 		
 		//cout << "before reduce " << uc.size() << endl;
 		//gic::print (uc);
-		int max_fail = 3;
+		int max_fail = 10;
 		bool done = false;
 		//cout<<"try mic"<<endl;
 		for (int iter = 1; iter <= max_fail; ++iter){
@@ -152,7 +155,7 @@ namespace gic{
 			done = true;
 			for (int i = 0; i < uc.size(); ++i){
 				if (!inv_sat_solve (uc, i ,frame_level)){
-					//cout<<"new uc"<<endl;
+					//cout<<"drop "<<uc[i]<<endl;
 					uc = get_uc (solver);
 					Cube uc_comp = complement (s, uc);
 					while (!inv_sat_solve (init_, uc)){
@@ -235,9 +238,14 @@ namespace gic{
 
 	bool Gic::inv_initial_solve (Cube& t){
 		Cube assumption = init_->s();
+		Clause cl = t;
 
 		for (auto it = t.begin(); it != t.end(); ++it)
 			assumption.push_back (model_->prime(*it));
+		int flag = inv_solver_->get_flag ();
+		cl.push_back (flag);
+		inv_solver_->add_clause_from_cube (cl);
+		assumption.push_back (flag);
 
 		stats_->count_main_solver_SAT_time_start ();
 	    bool res = inv_solver_->solve_with_assumption (assumption);
