@@ -187,6 +187,10 @@ namespace gic
 		bool in_initial (Cube &cu);
 		Cube complement (Cube& cu1, Cube& cu2);
 		
+		void generalize_mic (Cube& s,int& frame_level);
+		bool down (Cube& c, int& frame_level, Cube& required);
+		bool is_sat_assuming (Cube& cu,int& frame_level);
+		Cube get_intersection (Cube& a, Cube& b);
 		void set_common (Cube& st);
 		bool common_in_initial ();
 		void update_common_with (State* s);
