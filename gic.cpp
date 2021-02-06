@@ -524,8 +524,8 @@ namespace gic{
 		inv_solver_->add_clause_from_cube (cl);
 		assumption.push_back (flag);
 
-		for (auto it = s.begin (); it != s.end (); ++it)
-			assumption.push_back (model_->prime (*it));
+		for (int i = 0; i < s.size() - 1; ++i)
+			assumption.push_back (model_->prime (s[i]));
 
 
 		stats_->count_main_solver_SAT_time_start ();
