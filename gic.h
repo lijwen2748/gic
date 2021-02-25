@@ -174,7 +174,8 @@ namespace gic
 		bool frame_is_equal (int& i);
 		void add_mic_to_frame (Cube& mic,int frame_level);
 		bool deep_check (State* t);
-
+		bool inv_solve (Cube& cu, Cube& t);
+		
 		bool inv_sat_solve (int frame_level, int not_bad);
 		bool inv_sat_solve (Cube& s, int frame_level);
 		bool inv_sat_solve (State* init, Cube& t);

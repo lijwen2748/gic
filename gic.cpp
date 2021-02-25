@@ -168,7 +168,8 @@ namespace gic{
 				Cube uc = get_uc(inv_solver_);
 				Cube uc_comp = complement (c, uc);
 				while (!inv_sat_solve (init_, uc)){
-					assert (!uc_comp.empty ());
+				
+					assert (!uc_comp.empty());
 					uc.push_back (*(uc_comp.begin()));
 					uc_comp.erase (uc_comp.begin());
 				}
@@ -330,6 +331,19 @@ namespace gic{
 	    }
 	    return res;
 	}
+	
+	bool Gic::inv_solve (Cube& cu, Cube& t){ //cu can transit to t
+		Cube assumption = cu;
+		for (auto it = t.begin(); it != t.end(); ++it)
+			assumption.push_back (model_->prime(*it));
+		stats_->count_main_solver_SAT_time_start ();
+	    bool res = inv_solver_->solve_with_assumption (assumption);
+	    stats_->count_main_solver_SAT_time_end ();
+	    if (res){//set the evidence
+	    
+	    }
+	    return res;
+	}
 
 	bool Gic::inv_initial_solve (Cube& t){
 		Cube assumption = init_->s();
@@ -354,6 +368,7 @@ namespace gic{
 	
 	Cube Gic::get_predecessor (Cube& s){
 		State* F_state = get_state();
+		assert (inv_solve (F_state->s(),s));
 		bool res = inv_partial_solve (F_state,s);
 		if (!res){
 			//cout << "get partial state success" << endl;
