@@ -100,7 +100,7 @@ namespace gic{
 			}
 			//propagation stage
 			set_new_frame (); 
-			cout<<"add new frame"<<endl;
+			//cout<<"add new frame"<<endl;
 			
 			for (int i = 1;i<frame_level_;i++){
 				for (auto it = F_[i]->frame.begin();it != F_[i]->frame.end();++it){
@@ -358,6 +358,7 @@ namespace gic{
 		if (!res){
 			//cout << "get partial state success" << endl;
 			Cube cu = get_forward_uc (inv_solver_);
+			if (cu.empty()) cu = F_state->s();
 			remove_input_flag (cu);
 			std::sort (cu.begin(), cu.end(), gic::comp);
 			return cu;
@@ -635,7 +636,7 @@ namespace gic{
 					tmp.push_back (*it);
 		}
 		uc = tmp;
-		assert (!uc.empty ());
+		//assert (!uc.empty ());
 		return uc;
 	}
 	
