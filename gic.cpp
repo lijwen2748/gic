@@ -49,6 +49,7 @@ namespace gic{
 	        
 	    gic_initialization ();
 	    bool res = gic_check ();
+		print_frame (); 
 	    if (res)
     		out << "1" << endl;
    	    else
@@ -710,5 +711,20 @@ namespace gic{
 		return t->s();
 		//return get_uc (); //pay attention to that if an input var is in the returned UC
 	}
+
+	void Gic::print_frame (){
+		int k = 1;
+		auto it = F_.begin();
+		++it;
+		for (;it != F_.end();++it){
+			cout<< "frame "<<k<<endl;
+			k++;
+			Frame curr = *(*it);
+			for (int i = 0;i < curr.frame.size();++i){
+				gic::print (curr.frame[i]);
+			}
+			}
+		}
+
 	
 }	

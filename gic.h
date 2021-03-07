@@ -200,7 +200,7 @@ namespace gic
 		
 		Assignment get_partial (State* t);
 		void generate_evidence ();
-
+		void print_frame ();
 	};
 
 
