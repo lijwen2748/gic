@@ -93,7 +93,8 @@ namespace gic
 		
 		struct Frame
 		{
-			std::vector<Clause> frame; //the last element in frame[i] is the flag
+			std::vector<Clause> frame;  //additional clauses in this and previous frames
+			InvSolver *frame_solver;
 			//vector<int> flag_vec;
 		};
 

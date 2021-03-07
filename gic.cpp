@@ -117,6 +117,7 @@ namespace gic{
 
 	void Gic::set_new_frame (){
 		Frame* new_frame = new Frame();
+		new_frame->frame_solver = new InvSolver (model_, verbose_);
 		F_.push_back (new_frame);
 		frame_level_++;
 	}
@@ -457,6 +458,11 @@ namespace gic{
 	    	delete last_;
 	    	last_ = NULL;
 	    }
+
+		for (auto it = F_.begin();it != F_.end(); ++it){
+			delete (*it)->frame_solver;
+			delete *it;   //may cause problem
+		}
 	}
 	
 	bool Gic::immediate_satisfiable ()
