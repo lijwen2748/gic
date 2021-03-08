@@ -156,7 +156,7 @@ namespace gic
 		void mark_transition (State* start, State* next=NULL);
 		
 		
-		State* get_state ();
+		State* get_state (int frame_level);
 
 		std::pair<Assignment, Assignment> state_pair (const Assignment& st);
 		
@@ -177,12 +177,12 @@ namespace gic
 		bool deep_check (State* t);
 		bool inv_solve (Cube& cu, Cube& t);
 		
-		bool inv_sat_solve (int frame_level, int not_bad);
+		bool inv_sat_solve (int frame_level, int bad);
 		bool inv_sat_solve (Cube& s, int frame_level);
 		bool inv_sat_solve (State* init, Cube& t);
 		bool inv_sat_solve (Cube& cu, int n,int frame_level);
 		bool inv_sat_solve (Cube& cu, Cube& t);
-		bool inv_initial_solve (Cube& t); //if t is reachable from initial states
+		bool initial_solve (Cube& t); //if t is reachable from initial states
 		
 		Cube get_mic (SATSolver* solver, Cube& s,int& frame_level);
 		bool try_reduce (Cube s, Cube t);

@@ -96,7 +96,7 @@ namespace gic{
 		while (true){
 			//blocking stage
 			while (inv_sat_solve(frame_level_,bad_)){  //check whether bad state intersect with current frame
-				State* c = get_state ();
+				State* c = get_state (frame_level_);
 				if (!rec_block (c->s(),frame_level_)) return true; 
 			}
 			//propagation stage
@@ -124,7 +124,7 @@ namespace gic{
 	
 	bool Gic::rec_block (Cube& s,int i){
 		if (i == 1){
-			if (inv_initial_solve (s)) return false;
+			if (initial_solve (s)) return false;
 		}
 		else{
 			while (inv_sat_solve (s,i-1)){
@@ -349,17 +349,11 @@ namespace gic{
 
 	bool Gic::inv_initial_solve (Cube& t){
 		Cube assumption = init_->s();
-		Clause cl = t;
-
 		for (auto it = t.begin(); it != t.end(); ++it)
 			assumption.push_back (model_->prime(*it));
-		int flag = inv_solver_->get_flag ();
-		cl.push_back (flag);
-		inv_solver_->add_clause_from_cube (cl);
-		assumption.push_back (flag);
-
+		
 		stats_->count_main_solver_SAT_time_start ();
-	    bool res = inv_solver_->solve_with_assumption (assumption);
+	    bool res = solver_->solve_with_assumption (assumption);
 	    stats_->count_main_solver_SAT_time_end ();
 	    if (res){//set the evidence
 	    
@@ -500,25 +494,12 @@ namespace gic{
 	    return res;
 	}
 	//used
-	bool Gic::inv_sat_solve (int frame_level, int not_bad) {
+	bool Gic::inv_sat_solve (int frame_level, int bad) {
 		Cube assumption;
-		assumption.push_back (not_bad);
-		int frame_size = F_[frame_level]->frame.size();
+		assumption.push_back (bad);
 		
-		for (int i = 0;i < frame_size;i++){
-
-			int flag = F_[frame_level]->frame[i].back();
-			if (increase_flag_.find (flag) == increase_flag_.end()){
-				increase_flag_.insert (flag);
-				Clause& cl = F_[frame_level]->frame[i];
-				inv_solver_->add_clause_from_cube (cl);
-			}
-			assumption.push_back (flag);
-			
-		}
 		stats_->count_main_solver_SAT_time_start ();
-		//inv_solver_->print_clauses ();
-	    bool res = inv_solver_->solve_with_assumption (assumption);
+	    bool res = F_[frame_level]->frame_solver->solve_with_assumption (assumption);
 	    stats_->count_main_solver_SAT_time_end ();
 	    if (res){//set the evidence
 	    
@@ -668,8 +649,8 @@ namespace gic{
 		nt->set_predecessor (start);
 	}
 	
-	State* Gic::get_state (){
-		Assignment st = inv_solver_->get_model (); //to be done
+	State* Gic::get_state (int frame_level){
+		Assignment st = F_[frame_level]->frame_solver->get_model (); //to be done
 		std::pair<Assignment, Assignment> pa = state_pair (st);
 		State *res = new State (NULL, pa.first, pa.second, forward_, false);
 		
