@@ -105,8 +105,9 @@ namespace gic{
 			
 			for (int i = 1;i<frame_level_;i++){
 				for (auto it = F_[i]->frame.begin();it != F_[i]->frame.end();++it){
-					if (!inv_sat_solve (*it,i))
+					if (!inductive_solve (*it,i))
 						F_[i+1]->frame.push_back (*it); 
+						F_[i+1]->frame_solver->add_clause_from_cube (*it);
 				}
 				//test if F[i] is equal to F[i+1]
 				if (frame_is_equal (i)) return false;
@@ -127,9 +128,9 @@ namespace gic{
 			if (initial_solve (s)) return false;
 		}
 		else{
-			while (inv_sat_solve (s,i-1)){
+			while (inductive_solve (s,i-1)){
 				//cout<<"before partial "<<s.size()<<endl;
-				Cube pre_s = get_predecessor (s);
+				Cube pre_s = get_predecessor (s,i-1);
 				//cout<<"before partial "<<pre_s.size()<<endl;
 				if (!rec_block (pre_s,i-1)) return false;
 			}	
@@ -142,7 +143,7 @@ namespace gic{
 
 	void Gic::generalize_mic ( Cube& s,int& frame_level){
 		
-		int max_fail = 10;
+		int max_fail = 3;
 		Cube required;
 		int fail = 0;
 
@@ -167,7 +168,7 @@ namespace gic{
 		while (true){
 			if (inv_sat_solve (init_->s(), c)) return false;
 			if (!is_sat_assuming (c,frame_level)){
-				Cube uc = get_uc(inv_solver_);
+				Cube uc = get_uc(F_[frame_level]->frame_solver);
 				Cube uc_comp = complement (c, uc);
 				while (!inv_sat_solve (init_, uc)){
 				
@@ -179,7 +180,7 @@ namespace gic{
 				return true;
 			}
 			else{
-				Cube s = get_predecessor (c);
+				Cube s = get_predecessor (c,frame_level);
 				Cube uc_comp = complement (c, s);
 				if (get_intersection (uc_comp,required).size() != 0) return false;
 				c = get_intersection (c,s);
@@ -272,33 +273,19 @@ namespace gic{
 	}
 	
 	bool Gic::is_sat_assuming (Cube& cu,int& frame_level){
-		Cube tmp = cu;
-		
-		
-		tmp.push_back (inv_solver_->get_flag ());
-		inv_solver_->add_clause_from_cube (tmp);
+		Cube tmp;
+		tmp.push_back (F_[frame_level]->frame_solver->get_flag ());
+		tmp.insert (tmp.end(),cu.begin(),cu.end());
+		F_[frame_level]->frame_solver->add_clause_from_cube (tmp);
 		
 		Cube assumption;
-		for (int i = 0; i < tmp.size()-1; ++i){
-			assumption.push_back (model_->prime (tmp[i]));
+		for (auto it = cu.begin(); it != cu.end(); ++it){
+			assumption.push_back (model_->prime (*it));
 		}
-		assumption.push_back (tmp.back ());
-		
-		int pre_size = F_[frame_level]->frame.size();
-		//push frame as clasuse
-		for (int i = 0;i < pre_size;i++){
-			int flag = F_[frame_level]->frame[i].back();
-			if (increase_flag_.find (flag) == increase_flag_.end()){
-				increase_flag_.insert (flag);
-				Clause& cl = F_[frame_level]->frame[i];
-				inv_solver_->add_clause_from_cube (cl);
-			}
-			assumption.push_back (flag);	
-		}
+		assumption.push_back (tmp.front());
 		
 		stats_->count_main_solver_SAT_time_start ();
-		//inv_solver_->print_clauses ();
-	    bool res = inv_solver_->solve_with_assumption (assumption);
+	    bool res = F_[frame_level]->frame_solver->solve_with_assumption (assumption);
 	    stats_->count_main_solver_SAT_time_end ();
 	    if (res){//set the evidence
 	    
@@ -309,10 +296,10 @@ namespace gic{
 	bool Gic::inv_sat_solve (State* init, Cube& t){
 		Cube assumption = init->s();
 		Cube cu = t;
-		cu.push_back (inv_solver_->get_flag ());
+		cu.insert (cu.begin(),inv_solver_->get_flag ());
 		inv_solver_->add_clause_from_cube (cu);
 		
-		assumption.push_back (cu.back ());
+		assumption.push_back (cu.front ());
 		stats_->count_main_solver_SAT_time_start ();
 	    bool res = inv_solver_->solve_with_assumption (assumption);
 	    stats_->count_main_solver_SAT_time_end ();
@@ -362,18 +349,17 @@ namespace gic{
 	}
 	
 	
-	Cube Gic::get_predecessor (Cube& s){
-		State* F_state = get_state();
-		assert (inv_solve (F_state->s(),s));
+	Cube Gic::get_predecessor (Cube& s,int pre_level){
+		State* F_state = get_state(pre_level);
+		//assert (inv_solve (F_state->s(),s));
 		bool res = inv_partial_solve (F_state,s);
-		if (!res){
-			//cout << "get partial state success" << endl;
-			Cube cu = get_forward_uc (inv_solver_);
-			if (cu.empty()) cu = F_state->s();
-			remove_input_flag (cu);
-			std::sort (cu.begin(), cu.end(), gic::comp);
-			return cu;
-		}
+		assert (!res);
+		//cout << "get partial state success" << endl;
+		Cube cu = get_forward_uc (inv_solver_);
+		if (cu.empty()) cu = F_state->s();
+		remove_input_flag (cu);
+		std::sort (cu.begin(), cu.end(), gic::comp);
+		return cu;
 	}
 
 	bool Gic::inv_partial_solve (State* F_state,Cube& s){
@@ -381,10 +367,9 @@ namespace gic{
 		Cube cl_t;
 		Cube assumption = F_state->input ();
 		int t_flag = inv_solver_->get_flag();
-		
+		cl_t.push_back (t_flag);
 		for (auto it = s.begin (); it != s.end (); ++it)
 			cl_t.push_back (model_->prime (*it));
-		cl_t.push_back (t_flag);
 		inv_solver_->add_clause_from_cube (cl_t);
 
 		assumption.insert (assumption.begin (),F_state->s().begin(),F_state->s().end());
@@ -507,33 +492,22 @@ namespace gic{
 	    return res;
 	}
 	//used
-	bool Gic::inv_sat_solve (Cube& s, int pre_level){
+	bool Gic::inductive_solve (Cube& s, int pre_level){
 		Cube assumption;
 		
-		int pre_size = F_[pre_level]->frame.size();
-		//push frame as clasuse
-		for (int i = 0;i < pre_size;i++){
-			int flag = F_[pre_level]->frame[i].back();
-			if (increase_flag_.find (flag) == increase_flag_.end()){
-				increase_flag_.insert (flag);
-				Clause& cl = F_[pre_level]->frame[i];
-				inv_solver_->add_clause_from_cube (cl);
-			}
-			assumption.push_back (flag);	
-		}
 		//push !s as clause
-		int flag = inv_solver_->get_flag();
-		Clause cl = s;
+		int flag = F_[pre_level]->frame_solver->get_flag();
+		Clause cl;
 		cl.push_back (flag);
-		inv_solver_->add_clause_from_cube (cl);
+		cl.insert (cl.end(),s.begin(),s.end());
+		F_[pre_level]->frame_solver->add_clause_from_cube (cl);
 		assumption.push_back (flag);
 
 		for (int i = 0; i < s.size() - 1; ++i)
 			assumption.push_back (model_->prime (s[i]));
 
-
 		stats_->count_main_solver_SAT_time_start ();
-	    bool res = inv_solver_->solve_with_assumption (assumption);
+	    bool res = F_[pre_level]->frame_solver->solve_with_assumption (assumption);
 	    stats_->count_main_solver_SAT_time_end ();
 	    if (res){//set the evidence
 	    
@@ -585,11 +559,9 @@ namespace gic{
 	}
 
 	void Gic::add_mic_to_frame (Cube& mic, int frame_level){
-		Cube temp = mic;
-		int flag = inv_solver_->get_flag();
-		temp.push_back (flag);
+		F_[frame_level]->frame.push_back (mic);
 		for (int i = 1;i <= frame_level;i++){
-			F_[i]->frame.push_back (temp);
+			F_[i]->frame_solver->add_clause_from_cube (mic);
 		}
 	}
 	
@@ -650,7 +622,7 @@ namespace gic{
 	}
 	
 	State* Gic::get_state (int frame_level){
-		Assignment st = F_[frame_level]->frame_solver->get_model (); //to be done
+		Assignment st = F_[frame_level]->frame_solver->get_model (); 
 		std::pair<Assignment, Assignment> pa = state_pair (st);
 		State *res = new State (NULL, pa.first, pa.second, forward_, false);
 		

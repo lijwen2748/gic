@@ -160,7 +160,7 @@ namespace gic
 
 		std::pair<Assignment, Assignment> state_pair (const Assignment& st);
 		
-		Cube get_predecessor (Cube& s);
+		Cube get_predecessor (Cube& s,int pre_level);
 
 		bool inv_partial_solve (State* F_state,Cube& s);
 		
@@ -178,7 +178,7 @@ namespace gic
 		bool inv_solve (Cube& cu, Cube& t);
 		
 		bool inv_sat_solve (int frame_level, int bad);
-		bool inv_sat_solve (Cube& s, int frame_level);
+		bool inductive_solve (Cube& s, int frame_level);
 		bool inv_sat_solve (State* init, Cube& t);
 		bool inv_sat_solve (Cube& cu, int n,int frame_level);
 		bool inv_sat_solve (Cube& cu, Cube& t);
