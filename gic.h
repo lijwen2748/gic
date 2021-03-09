@@ -172,7 +172,6 @@ namespace gic
 		bool pdr_check ();
 		void set_new_frame ();
 		bool rec_block (Cube& s,int k);
-		bool frame_is_equal (int& i);
 		void add_mic_to_frame (Cube& mic,int frame_level);
 		bool deep_check (State* t);
 		bool inv_solve (Cube& cu, Cube& t);
@@ -190,7 +189,7 @@ namespace gic
 		Cube complement (Cube& cu1, Cube& cu2);
 		
 		void generalize_mic (Cube& s,int& frame_level);
-		bool down (Cube& c, int& frame_level, Cube& required);
+		bool down ( int pre_level, Cube& c,Cube& required);
 		bool is_sat_assuming (Cube& cu,int& frame_level);
 		Cube get_intersection (Cube& a, Cube& b);
 		void set_common (Cube& st);

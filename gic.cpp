@@ -88,6 +88,7 @@ namespace gic{
 		if (sat_solve (init_->s(), bad_))
 			return true;
 		Frame* new_frame = new Frame();
+		new_frame->frame_solver = new InvSolver (model_, verbose_);
 		new_frame->frame.push_back (init_->s());
 		F_.push_back (new_frame);
 		frame_level_ = 0;
@@ -108,9 +109,12 @@ namespace gic{
 					if (!inductive_solve (*it,i))
 						F_[i+1]->frame.push_back (*it); 
 						F_[i+1]->frame_solver->add_clause_from_cube (*it);
+						it = F_[i]->frame.erase (it);
+						if (it == F_[i]->frame.end()) break;
+						else --it;
 				}
 				//test if F[i] is equal to F[i+1]
-				if (frame_is_equal (i)) return false;
+				if (F_[i]->frame.empty()) return false;
 			}
 		}
 		return false;
@@ -124,17 +128,15 @@ namespace gic{
 	}
 	
 	bool Gic::rec_block (Cube& s,int i){
-		if (i == 1){
-			if (initial_solve (s)) return false;
-		}
-		else{
-			while (inductive_solve (s,i-1)){
-				//cout<<"before partial "<<s.size()<<endl;
-				Cube pre_s = get_predecessor (s,i-1);
-				//cout<<"before partial "<<pre_s.size()<<endl;
-				if (!rec_block (pre_s,i-1)) return false;
-			}	
-		}
+		if (i == 0) return false;
+		
+		while (inductive_solve (s,i-1)){
+			//cout<<"before partial "<<s.size()<<endl;
+			Cube pre_s = get_predecessor (s,i-1);
+			//cout<<"before partial "<<pre_s.size()<<endl;
+			if (!rec_block (pre_s,i-1)) return false;
+		}	
+		
 		//cout<<"get mic"<<endl;
 		generalize_mic(s,i);
 		add_mic_to_frame (s,i);   //add mic as cube,used as neg clause
@@ -153,7 +155,7 @@ namespace gic{
 				if (j != i) cand.push_back (s[j]);
 			}
 
-			if (down (cand,frame_level,required)){
+			if (down (frame_level-1,cand,required)){
 				s = cand;
 				fail = 0;
 			}
@@ -164,11 +166,11 @@ namespace gic{
 		}
 	}
 
-	bool Gic::down (Cube& c, int& frame_level, Cube& required){
+	bool Gic::down ( int pre_level,Cube& c, Cube& required){
 		while (true){
 			if (inv_sat_solve (init_->s(), c)) return false;
-			if (!is_sat_assuming (c,frame_level)){
-				Cube uc = get_uc(F_[frame_level]->frame_solver);
+			if (!is_sat_assuming (c,pre_level)){
+				Cube uc = get_uc(F_[pre_level]->frame_solver);
 				Cube uc_comp = complement (c, uc);
 				while (!inv_sat_solve (init_, uc)){
 				
@@ -180,7 +182,7 @@ namespace gic{
 				return true;
 			}
 			else{
-				Cube s = get_predecessor (c,frame_level);
+				Cube s = get_predecessor (c,pre_level);
 				Cube uc_comp = complement (c, s);
 				if (get_intersection (uc_comp,required).size() != 0) return false;
 				c = get_intersection (c,s);
@@ -240,25 +242,6 @@ namespace gic{
 		
 		return uc;
 	}
-	
-	bool Gic::frame_is_equal (int& i){
-		int frame_size = F_[i]->frame.size();
-		if (frame_size != F_[i+1]->frame.size()) 
-			return false;
-		Cube frame_i;
-		Cube frame_ni;
-		for(int j = 0;j < frame_size;j++){
-			frame_i.push_back(F_[i]->frame[j].back());
-			frame_ni.push_back(F_[i+1]->frame[j].back());
-		}
-		sort (frame_i.begin(),frame_i.end());
-		sort (frame_ni.begin(),frame_ni.end());
-		for (int k = 0;k < frame_size;k++){
-			if (frame_i[k] != frame_ni[k]) return false;
-		}
-		return true;
-
-	}
 
 	Cube Gic::complement (Cube& cu1, Cube& cu2){
 		Cube res;
@@ -283,7 +266,7 @@ namespace gic{
 			assumption.push_back (model_->prime (*it));
 		}
 		assumption.push_back (tmp.front());
-		
+		if (frame_level == 0) assumption.insert (assumption.end(),init_->s().begin(),init_->s().end());
 		stats_->count_main_solver_SAT_time_start ();
 	    bool res = F_[frame_level]->frame_solver->solve_with_assumption (assumption);
 	    stats_->count_main_solver_SAT_time_end ();
@@ -334,7 +317,7 @@ namespace gic{
 	    return res;
 	}
 
-	bool Gic::inv_initial_solve (Cube& t){
+	bool Gic::initial_solve (Cube& t){
 		Cube assumption = init_->s();
 		for (auto it = t.begin(); it != t.end(); ++it)
 			assumption.push_back (model_->prime(*it));
@@ -494,7 +477,7 @@ namespace gic{
 	//used
 	bool Gic::inductive_solve (Cube& s, int pre_level){
 		Cube assumption;
-		
+
 		//push !s as clause
 		int flag = F_[pre_level]->frame_solver->get_flag();
 		Clause cl;
@@ -503,9 +486,9 @@ namespace gic{
 		F_[pre_level]->frame_solver->add_clause_from_cube (cl);
 		assumption.push_back (flag);
 
-		for (int i = 0; i < s.size() - 1; ++i)
+		for (int i = 0; i < s.size(); ++i)
 			assumption.push_back (model_->prime (s[i]));
-
+		if (pre_level == 0) assumption.insert (assumption.end(),init_->s().begin(),init_->s().end());
 		stats_->count_main_solver_SAT_time_start ();
 	    bool res = F_[pre_level]->frame_solver->solve_with_assumption (assumption);
 	    stats_->count_main_solver_SAT_time_end ();
