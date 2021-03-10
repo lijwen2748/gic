@@ -49,7 +49,7 @@ namespace gic{
 	        
 	    gic_initialization ();
 	    bool res = gic_check ();
-		print_frame (); 
+	    //print_frame (); 
 	    if (res)
     		out << "1" << endl;
    	    else
@@ -106,12 +106,13 @@ namespace gic{
 			
 			for (int i = 1;i<frame_level_;i++){
 				for (auto it = F_[i]->frame.begin();it != F_[i]->frame.end();++it){
-					if (!inductive_solve (*it,i))
+					if (!inductive_solve (*it,i)){
 						F_[i+1]->frame.push_back (*it); 
 						F_[i+1]->frame_solver->add_clause_from_cube (*it);
 						it = F_[i]->frame.erase (it);
 						if (it == F_[i]->frame.end()) break;
 						else --it;
+					}
 				}
 				//test if F[i] is equal to F[i+1]
 				if (F_[i]->frame.empty()) return false;
@@ -464,7 +465,7 @@ namespace gic{
 	//used
 	bool Gic::inv_sat_solve (int frame_level, int bad) {
 		Cube assumption;
-		assumption.push_back (bad);
+		assumption.push_back (model_->prime (bad));
 		
 		stats_->count_main_solver_SAT_time_start ();
 	    bool res = F_[frame_level]->frame_solver->solve_with_assumption (assumption);
