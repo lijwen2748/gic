@@ -197,7 +197,8 @@ namespace gic
 		void update_common_with (State* s);
 		bool inv_common_sat_solve (int not_bad, State* t);
 		bool is_blocked (State* t);
-		
+		bool cube_non_neg (Cube& uc);
+		int get_pos_elem (Cube& uc);
 		Assignment get_partial (State* t);
 		void generate_evidence ();
 		void print_frame ();

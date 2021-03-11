@@ -190,6 +190,19 @@ namespace gic{
 			}
 		}
 	}
+	
+	bool Gic::cube_non_neg (Cube& uc){
+		for (auto it = uc.begin();it != uc.end();++it){
+			if ((*it) > 0) return true;
+		}
+		return false;
+	}
+
+	int Gic::get_pos_elem (Cube& uc){
+		for (auto it = uc.begin();it != uc.end();++it){
+			if ((*it) > 0) return *it;
+		}
+	}
 
 	Cube Gic::get_intersection (Cube& a, Cube& b){
 		Cube res;
