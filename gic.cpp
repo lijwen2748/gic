@@ -101,6 +101,7 @@ namespace gic{
 				if (!rec_block (c->s(),frame_level_)) return true; 
 			}
 			//propagation stage
+			print_frame_lev (frame_level_);
 			set_new_frame (); 
 			//cout<<"add new frame"<<endl;
 			
@@ -120,7 +121,13 @@ namespace gic{
 		}
 		return false;
 	}
-
+	
+	void Gic::print_frame_lev (int frame_level){
+		cout<<"frame "<<frame_level<<endl;
+		for (auto it = F_[frame_level]->frame.begin();it != F_[frame_level]->frame.end();++it)
+			gic::print (*it);
+	}
+	
 	void Gic::set_new_frame (){
 		Frame* new_frame = new Frame();
 		new_frame->frame_solver = new InvSolver (model_, verbose_);
@@ -140,6 +147,7 @@ namespace gic{
 		
 		//cout<<"get mic"<<endl;
 		generalize_mic(s,i);
+		std::sort (s.begin(), s.end(), gic::comp);
 		add_mic_to_frame (s,i);   //add mic as cube,used as neg clause
 		return true;
 	}
