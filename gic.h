@@ -163,6 +163,10 @@ namespace gic
 		Cube get_predecessor (Cube& s,int pre_level);
 
 		bool inv_partial_solve (State* F_state,Cube& s);
+
+		Cube get_bad_predecessor (int pre_level,int bad);
+
+		bool inv_bad_partial_solve (State* F_state,int bad);
 		
 		void remove_input_flag (Cube& uc);
 		
@@ -175,15 +179,18 @@ namespace gic
 		void add_mic_to_frame (Cube& mic,int frame_level);
 		bool deep_check (State* t);
 		bool inv_solve (Cube& cu, Cube& t);
+
+		Cube get_prime_state (int frame_level);
+
 		
 		bool inv_sat_solve (int frame_level, int bad);
 		bool inductive_solve (Cube& s, int frame_level);
 		bool inv_sat_solve (State* init, Cube& t);
-		bool inv_sat_solve (Cube& cu, int n,int frame_level);
+		//bool inv_sat_solve (Cube& cu, int n,int frame_level);
 		bool inv_sat_solve (Cube& cu, Cube& t);
 		bool initial_solve (Cube& t); //if t is reachable from initial states
 		
-		Cube get_mic (SATSolver* solver, Cube& s,int& frame_level);
+		//Cube get_mic (SATSolver* solver, Cube& s,int& frame_level);
 		bool try_reduce (Cube s, Cube t);
 		bool in_initial (Cube &cu);
 		Cube complement (Cube& cu1, Cube& cu2);

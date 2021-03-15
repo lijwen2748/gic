@@ -97,8 +97,9 @@ namespace gic{
 		while (true){
 			//blocking stage
 			while (inv_sat_solve(frame_level_,bad_)){  //check whether bad state intersect with current frame
-				State* c = get_state (frame_level_);
-				if (!rec_block (c->s(),frame_level_)) return true; 
+				Cube c = get_prime_state (frame_level_); //c is a bad state
+				Cube pre_c = get_predecessor (c,frame_level_);
+				if (!rec_block (pre_c,frame_level_)) return true;  
 			}
 			//propagation stage
 			print_frame_lev (frame_level_);
@@ -225,7 +226,7 @@ namespace gic{
 		return res;
 	
 	}	
-
+	/*
 	Cube Gic::get_mic (SATSolver* solver, Cube& s,int& frame_level){
 		//Cube uc = get_uc (solver);
 		Cube uc = s;
@@ -264,7 +265,7 @@ namespace gic{
 		
 		return uc;
 	}
-
+	*/
 	Cube Gic::complement (Cube& cu1, Cube& cu2){
 		Cube res;
 		hash_set<int> tmp_set;
@@ -292,12 +293,15 @@ namespace gic{
 		stats_->count_main_solver_SAT_time_start ();
 	    bool res = F_[frame_level]->frame_solver->solve_with_assumption (assumption);
 	    stats_->count_main_solver_SAT_time_end ();
+
+		F_[frame_level]->frame_solver->add_clause (-tmp.front());
 	    if (res){//set the evidence
 	    
 	    }
 	    return res;
 	}
-
+    
+	
 	bool Gic::inv_sat_solve (State* init, Cube& t){
 		Cube assumption = init->s();
 		Cube cu = t;
@@ -308,6 +312,8 @@ namespace gic{
 		stats_->count_main_solver_SAT_time_start ();
 	    bool res = inv_solver_->solve_with_assumption (assumption);
 	    stats_->count_main_solver_SAT_time_end ();
+
+		inv_solver_->add_clause (-cu.front ());
 	    if (res){//set the evidence
 	    
 	    }
@@ -383,13 +389,52 @@ namespace gic{
 		stats_->count_main_solver_SAT_time_start ();
 	    bool res = inv_solver_->solve_with_assumption (assumption);
 	    stats_->count_main_solver_SAT_time_end ();
+
+		inv_solver_->add_clause (-t_flag);
 	    if (res){//set the evidence
 	    
 	    }
 	    return res;
 	}
 	
-	
+	Cube Gic::get_bad_predecessor (int pre_level,int bad){
+		State* F_state = get_state(pre_level);
+		//assert (inv_solve (F_state->s(),s));
+		bool res = inv_bad_partial_solve (F_state,bad);
+		if (res){
+			State* F_state = get_state(pre_level);
+		}
+		//cout << "get partial state success" << endl;
+		Cube cu = get_forward_uc (inv_solver_);
+		if (cu.empty()) cu = F_state->s();
+		remove_input_flag (cu);
+		std::sort (cu.begin(), cu.end(), gic::comp);
+		return cu;
+	}
+
+	bool Gic::inv_bad_partial_solve (State* F_state,int bad){
+		Cube cl_t;
+		Cube assumption = F_state->input ();
+		int t_flag = inv_solver_->get_flag();
+		cl_t.push_back (t_flag);
+		cl_t.push_back (model_->prime (bad));
+		inv_solver_->add_clause_from_cube (cl_t);
+
+		assumption.insert (assumption.begin (),F_state->s().begin(),F_state->s().end());
+		assumption.push_back(t_flag);
+		
+		stats_->count_main_solver_SAT_time_start ();
+	    bool res = inv_solver_->solve_with_assumption (assumption);
+	    stats_->count_main_solver_SAT_time_end ();
+
+		//clear flag in solver
+		inv_solver_->add_clause (-t_flag);
+
+	    if (res){//set the evidence
+	    
+	    }
+	    return res;
+	}
 	
 	/*========================helper function==================*/
 	Gic::Gic (Model* model, Statistics& stats, std::ofstream* dot, bool forward, bool evidence, bool verbose){
@@ -514,13 +559,15 @@ namespace gic{
 		stats_->count_main_solver_SAT_time_start ();
 	    bool res = F_[pre_level]->frame_solver->solve_with_assumption (assumption);
 	    stats_->count_main_solver_SAT_time_end ();
+
+		F_[pre_level]->frame_solver->add_clause (-flag);
 	    if (res){//set the evidence
 	    
 	    }
 	    return res;
 	}
 
-	
+	/*
 	bool Gic::inv_sat_solve (Cube& cu, int n,int frame_level){
 		Cube tmp;
 		for (int i = 0; i < cu.size(); ++i){
@@ -562,7 +609,7 @@ namespace gic{
 	    }
 	    return res;
 	}
-
+	*/
 	void Gic::add_mic_to_frame (Cube& mic, int frame_level){
 		F_[frame_level]->frame.push_back (mic);
 		for (int i = 1;i <= frame_level;i++){
@@ -647,6 +694,16 @@ namespace gic{
 	        latches.push_back (st[i]);
 	    }
 	    return std::pair<Assignment, Assignment> (inputs, latches);
+	}
+
+	Cube Gic::get_prime_state (int frame_level){
+		Assignment st = F_[frame_level]->frame_solver->get_model (); 
+		Cube res;
+		int prime_start = model_->prime (model_->num_inputs ());
+		int latch_num = model_->num_latches ();
+		for (int i = 0;i < latch_num;++i)
+			res.push_back  (model_->previous (st[prime_start + i]));
+		return res;
 	}
 
 	void Gic::remove_input_flag (Cube& uc) {
