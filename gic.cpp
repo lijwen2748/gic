@@ -102,7 +102,7 @@ namespace gic{
 				if (!rec_block (pre_c,frame_level_)) return true;  
 			}
 			//propagation stage
-			print_frame_lev (frame_level_);
+			//print_frame_lev (frame_level_);
 			set_new_frame (); 
 			//cout<<"add new frame"<<endl;
 			
@@ -145,7 +145,8 @@ namespace gic{
 			//cout<<"before partial "<<pre_s.size()<<endl;
 			if (!rec_block (pre_s,i-1)) return false;
 		}	
-		
+		Cube uc = get_uc (F_[i-1]->frame_solver);
+		s = uc;
 		//cout<<"get mic"<<endl;
 		generalize_mic(s,i);
 		std::sort (s.begin(), s.end(), gic::comp);
