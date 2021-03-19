@@ -49,7 +49,7 @@ namespace gic{
 	        
 	    gic_initialization ();
 	    bool res = gic_check ();
-	    //print_frame (); 
+	    print_frame (); 
 	    if (res)
     		out << "1" << endl;
    	    else
@@ -93,7 +93,10 @@ namespace gic{
 		F_.push_back (new_frame);
 		frame_level_ = 0;
 		set_new_frame (); 
-		
+		Cube st;
+		st.push_back(-363);
+		bool res362 = sat_solve (st,bad_);
+		cout<<"wheather 362 can transit to bad: "<<res362<<std::endl;
 		while (true){
 			//blocking stage
 			while (inv_sat_solve(frame_level_,bad_)){  //check whether bad state intersect with current frame
@@ -102,20 +105,28 @@ namespace gic{
 				if (!rec_block (pre_c,frame_level_)) return true;  
 			}
 			//propagation stage
-			//print_frame_lev (frame_level_);
+			print_frame_lev (frame_level_);
 			set_new_frame (); 
 			//cout<<"add new frame"<<endl;
 			
 			for (int i = 1;i<frame_level_;i++){
 				for (auto it = F_[i]->frame.begin();it != F_[i]->frame.end();++it){
-					if (!inductive_solve (*it,i)){
-						F_[i+1]->frame.push_back (*it); 
-						F_[i+1]->frame_solver->add_clause_from_cube (*it);
+					if (!propa_inductive_solve (*it,i)){
+						Cube uc = get_uc (F_[i]->frame_solver);
+						if (uc.empty()) {
+							Cube empty;
+							bool result = propa_inductive_solve (empty,i);
+							cout<< "sat frame i with a empty assumption: "<<result<<std::endl;
+						}
+						uc = *it;
+						F_[i+1]->frame.push_back (uc); 
+						F_[i+1]->frame_solver->add_clause_from_cube (uc);
 						it = F_[i]->frame.erase (it);
 						if (it == F_[i]->frame.end()) break;
 						else --it;
 					}
 				}
+				F_[i]->frame_solver->simplify();
 				//test if F[i] is equal to F[i+1]
 				if (F_[i]->frame.empty()) return false;
 			}
@@ -146,6 +157,7 @@ namespace gic{
 			if (!rec_block (pre_s,i-1)) return false;
 		}	
 		Cube uc = get_uc (F_[i-1]->frame_solver);
+		assert (!inductive_solve (uc,i-1));
 		s = uc;
 		//cout<<"get mic"<<endl;
 		generalize_mic(s,i);
@@ -156,7 +168,7 @@ namespace gic{
 
 	void Gic::generalize_mic ( Cube& s,int& frame_level){
 		
-		int max_fail = 3;
+		int max_fail = 5;
 		Cube required;
 		int fail = 0;
 
@@ -182,6 +194,7 @@ namespace gic{
 			if (inv_sat_solve (init_->s(), c)) return false;
 			if (!is_sat_assuming (c,pre_level)){
 				Cube uc = get_uc(F_[pre_level]->frame_solver);
+				if (uc.empty()) uc = c;
 				Cube uc_comp = complement (c, uc);
 				while (!inv_sat_solve (init_, uc)){
 				
@@ -519,7 +532,7 @@ namespace gic{
 	//used
 	bool Gic::sat_solve (Assignment& st, int bad) {
 		Cube assumption = st;
-		assumption.push_back (model_->prime (bad));
+		assumption.push_back (bad);
 		
 		stats_->count_main_solver_SAT_time_start ();
 	    bool res = solver_->solve_with_assumption (assumption);
@@ -532,6 +545,7 @@ namespace gic{
 	//used
 	bool Gic::inv_sat_solve (int frame_level, int bad) {
 		Cube assumption;
+		//assumption.push_back (bad);
 		assumption.push_back (model_->prime (bad));
 		
 		stats_->count_main_solver_SAT_time_start ();
@@ -568,6 +582,16 @@ namespace gic{
 	    return res;
 	}
 
+	bool Gic::propa_inductive_solve (Cube& s, int frame_level){
+		//if s can be propagte to next frame
+		Cube assumption;
+		for (int i = 0; i < s.size(); ++i)
+			assumption.push_back (model_->prime (s[i]));
+		stats_->count_main_solver_SAT_time_start ();
+	    bool res = F_[frame_level]->frame_solver->solve_with_assumption (assumption);
+	    stats_->count_main_solver_SAT_time_end ();
+	    return res;
+	}
 	/*
 	bool Gic::inv_sat_solve (Cube& cu, int n,int frame_level){
 		Cube tmp;
@@ -641,17 +665,11 @@ namespace gic{
 		Cube tmp;
 		int id = model_->max_id ()/2;
 		for (auto it = uc.begin(); it != uc.end(); ++it){
-			if (forward_){
-				if (id >= abs(*it))
-					tmp.push_back (*it);
-			}
-			else{
-				if (id < abs(*it) && (abs(*it) <= model_->max_id()))
-					tmp.push_back (model_->previous (*it));
-			}
+			if (id < abs(*it) && (abs(*it) <= model_->max_id()))
+				tmp.push_back (model_->previous (*it));
 		}
 		uc = tmp;
-		assert (!uc.empty ());
+		std::sort (uc.begin(), uc.end(), gic::comp);
 		return uc;
 	}
 	
@@ -700,7 +718,7 @@ namespace gic{
 	Cube Gic::get_prime_state (int frame_level){
 		Assignment st = F_[frame_level]->frame_solver->get_model (); 
 		Cube res;
-		int prime_start = model_->prime (model_->num_inputs ());
+		int prime_start = (0 == model_->num_inputs ())?model_->prime (1):model_->prime (model_->num_inputs ());
 		int latch_num = model_->num_latches ();
 		for (int i = 0;i < latch_num;++i)
 			res.push_back  (model_->previous (st[prime_start + i]));

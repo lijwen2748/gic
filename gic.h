@@ -184,7 +184,8 @@ namespace gic
 
 		
 		bool inv_sat_solve (int frame_level, int bad);
-		bool inductive_solve (Cube& s, int frame_level);
+		bool inductive_solve (Cube& s, int pre_level);
+		bool propa_inductive_solve (Cube& s, int frame_level);
 		bool inv_sat_solve (State* init, Cube& t);
 		//bool inv_sat_solve (Cube& cu, int n,int frame_level);
 		bool inv_sat_solve (Cube& cu, Cube& t);
