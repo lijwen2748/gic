@@ -149,7 +149,7 @@ namespace gic{
 		    if (*it == 0) continue;
 			aiger_and* aa = aiger_is_and (const_cast<aiger*>(aig), *it);
 			assert (aa != NULL);
-			add_clauses_from_gate (aa);
+			add_prime_clauses_from_gate (aa);
 		}
 		
 		set_latches_start ();
@@ -239,6 +239,39 @@ namespace gic{
 			cls_.push_back (clause (car_var (aa->lhs), -car_var (aa->rhs1)));
 			cls_.push_back (clause (-car_var (aa->lhs), car_var (aa->rhs1)));
 			//add the prime for aa->lhs
+			//cls_.push_back (clause (prime (car_var (aa->lhs)), prime (-car_var (aa->rhs1))));
+			//cls_.push_back (clause (prime (-car_var (aa->lhs)), prime (car_var (aa->rhs1))));
+		}
+		else if (is_true (aa->rhs1))
+		{
+			cls_.push_back (clause (car_var (aa->lhs), -car_var (aa->rhs0)));
+			cls_.push_back (clause (-car_var (aa->lhs), car_var (aa->rhs0)));
+			//add the prime for aa->lhs
+			//cls_.push_back (clause (prime (car_var (aa->lhs)), prime (-car_var (aa->rhs0))));
+			//cls_.push_back (clause (prime (-car_var (aa->lhs)), prime (car_var (aa->rhs0))));
+		}
+		else
+		{
+			cls_.push_back (clause (car_var (aa->lhs), -car_var (aa->rhs0), -car_var (aa->rhs1)));
+			cls_.push_back (clause (-car_var (aa->lhs), car_var (aa->rhs0)));
+			cls_.push_back (clause (-car_var (aa->lhs), car_var (aa->rhs1)));
+			//add the prime for aa->lhs
+			//cls_.push_back (clause (prime (car_var (aa->lhs)), prime (-car_var (aa->rhs0)), prime (-car_var (aa->rhs1))));
+			//cls_.push_back (clause (prime (-car_var (aa->lhs)), prime (car_var (aa->rhs0))));
+			//cls_.push_back (clause (prime (-car_var (aa->lhs)), prime (car_var (aa->rhs1))));
+		}
+			
+	}
+	
+	void Model::add_prime_clauses_from_gate (const aiger_and* aa){
+		assert (aa != NULL);
+		assert (!is_true (aa->lhs) && !is_false (aa->lhs));
+		
+		if (is_true (aa->rhs0))
+		{
+			cls_.push_back (clause (car_var (aa->lhs), -car_var (aa->rhs1)));
+			cls_.push_back (clause (-car_var (aa->lhs), car_var (aa->rhs1)));
+			//add the prime for aa->lhs
 			cls_.push_back (clause (prime (car_var (aa->lhs)), prime (-car_var (aa->rhs1))));
 			cls_.push_back (clause (prime (-car_var (aa->lhs)), prime (car_var (aa->rhs1))));
 		}
@@ -260,9 +293,8 @@ namespace gic{
 			cls_.push_back (clause (prime (-car_var (aa->lhs)), prime (car_var (aa->rhs0))));
 			cls_.push_back (clause (prime (-car_var (aa->lhs)), prime (car_var (aa->rhs1))));
 		}
-			
 	}
-	
+
 	void Model::set_init (const aiger* aig)
 	{
 		for (int i = 0; i < aig->num_latches; i ++)

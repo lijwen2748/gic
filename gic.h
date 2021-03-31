@@ -166,7 +166,7 @@ namespace gic
 
 		Cube get_bad_predecessor (int pre_level,int bad);
 
-		bool inv_bad_partial_solve (State* F_state,int bad);
+		bool inv_bad_partial_solve (State* F_state,Cube& input_prime,int bad);
 		
 		void remove_input_flag (Cube& uc);
 		

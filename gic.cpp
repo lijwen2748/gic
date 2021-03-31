@@ -94,14 +94,14 @@ namespace gic{
 		frame_level_ = 0;
 		set_new_frame (); 
 		Cube st;
-		st.push_back(-363);
+		st.push_back(-361);
 		bool res362 = sat_solve (st,bad_);
 		cout<<"wheather 362 can transit to bad: "<<res362<<std::endl;
 		while (true){
 			//blocking stage
 			while (inv_sat_solve(frame_level_,bad_)){  //check whether bad state intersect with current frame
-				Cube c = get_prime_state (frame_level_); //c is a bad state
-				Cube pre_c = get_predecessor (c,frame_level_);
+				//Cube c = get_prime_state (frame_level_); //c is a bad state
+				Cube pre_c = get_bad_predecessor (frame_level_,bad_);
 				if (!rec_block (pre_c,frame_level_)) return true;  
 			}
 			//propagation stage
@@ -172,7 +172,7 @@ namespace gic{
 		Cube required;
 		int fail = 0;
 
-		for (int i = 0; i < s.size(); ++i){
+		for (int i = s.size()-1; i >= 0; i--){
 			Cube cand;
 			for (int j = 0;j < s.size(); ++j){
 				if (j != i) cand.push_back (s[j]);
@@ -413,8 +413,13 @@ namespace gic{
 	
 	Cube Gic::get_bad_predecessor (int pre_level,int bad){
 		State* F_state = get_state(pre_level);
+		Assignment st = F_[pre_level]->frame_solver->get_model ();
+		Cube input_prime;
+		for (int i=1;i <= model_->num_inputs ();++i)
+			input_prime.push_back (st[model_->prime(i)]);
+		//get input prime to make bad partial works
 		//assert (inv_solve (F_state->s(),s));
-		bool res = inv_bad_partial_solve (F_state,bad);
+		bool res = inv_bad_partial_solve (F_state,input_prime,bad);
 		if (res){
 			State* F_state = get_state(pre_level);
 		}
@@ -426,14 +431,15 @@ namespace gic{
 		return cu;
 	}
 
-	bool Gic::inv_bad_partial_solve (State* F_state,int bad){
+	bool Gic::inv_bad_partial_solve (State* F_state,Cube& input_prime,int bad){
 		Cube cl_t;
 		Cube assumption = F_state->input ();
+		assumption.insert (assumption.end(),input_prime.begin(),input_prime.end());
 		int t_flag = inv_solver_->get_flag();
 		cl_t.push_back (t_flag);
 		cl_t.push_back (model_->prime (bad));
 		inv_solver_->add_clause_from_cube (cl_t);
-
+		
 		assumption.insert (assumption.begin (),F_state->s().begin(),F_state->s().end());
 		assumption.push_back(t_flag);
 		
@@ -532,7 +538,7 @@ namespace gic{
 	//used
 	bool Gic::sat_solve (Assignment& st, int bad) {
 		Cube assumption = st;
-		assumption.push_back (bad);
+		assumption.push_back (model_->prime (bad));
 		
 		stats_->count_main_solver_SAT_time_start ();
 	    bool res = solver_->solve_with_assumption (assumption);
