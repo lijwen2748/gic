@@ -49,7 +49,7 @@ namespace gic{
 	        
 	    gic_initialization ();
 	    bool res = gic_check ();
-	    print_frame (); 
+	    //print_frame (); 
 	    if (res)
     		out << "1" << endl;
    	    else
@@ -93,10 +93,15 @@ namespace gic{
 		F_.push_back (new_frame);
 		frame_level_ = 0;
 		set_new_frame (); 
+		/*
 		Cube st;
-		st.push_back(-361);
-		bool res362 = sat_solve (st,bad_);
-		cout<<"wheather 362 can transit to bad: "<<res362<<std::endl;
+		st.push_back(-361),st.push_back(-363);
+		st.push_back(362);
+		Cube s2;
+		s2.push_back (362);
+		bool res362 = inv_solve (st,s2);
+		cout<<"wheather init can transit to 361: "<<res362<<std::endl;
+		*/
 		while (true){
 			//blocking stage
 			while (inv_sat_solve(frame_level_,bad_)){  //check whether bad state intersect with current frame
@@ -105,20 +110,20 @@ namespace gic{
 				if (!rec_block (pre_c,frame_level_)) return true;  
 			}
 			//propagation stage
-			print_frame_lev (frame_level_);
+			//print_frame_lev (frame_level_);
 			set_new_frame (); 
 			//cout<<"add new frame"<<endl;
 			
 			for (int i = 1;i<frame_level_;i++){
 				for (auto it = F_[i]->frame.begin();it != F_[i]->frame.end();++it){
-					if (!propa_inductive_solve (*it,i)){
+					//test ,model_->prime(361)
+					//Cube test={-361,-363,362,model_->prime(361)};
+					//bool rres = F_[1]->frame_solver->solve_with_assumption (test);
+					//cout<<"frame solver trans to 361"<<rres<<endl;
+					if (!propa_inductive_solve (*it,i)){ 
 						Cube uc = get_uc (F_[i]->frame_solver);
-						if (uc.empty()) {
-							Cube empty;
-							bool result = propa_inductive_solve (empty,i);
-							cout<< "sat frame i with a empty assumption: "<<result<<std::endl;
-						}
-						uc = *it;
+						if (!cube_non_neg (uc)) uc.push_back (get_pos_elem (*it));
+						//uc = *it;
 						F_[i+1]->frame.push_back (uc); 
 						F_[i+1]->frame_solver->add_clause_from_cube (uc);
 						it = F_[i]->frame.erase (it);
@@ -126,7 +131,7 @@ namespace gic{
 						else --it;
 					}
 				}
-				F_[i]->frame_solver->simplify();
+				//F_[i]->frame_solver->simplify();
 				//test if F[i] is equal to F[i+1]
 				if (F_[i]->frame.empty()) return false;
 			}
@@ -157,6 +162,7 @@ namespace gic{
 			if (!rec_block (pre_s,i-1)) return false;
 		}	
 		Cube uc = get_uc (F_[i-1]->frame_solver);
+		if (!cube_non_neg (uc)) uc.push_back (get_pos_elem (s));
 		assert (!inductive_solve (uc,i-1));
 		s = uc;
 		//cout<<"get mic"<<endl;
