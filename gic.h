@@ -179,7 +179,7 @@ namespace gic
 		void add_mic_to_frame (Cube& mic,int frame_level);
 		bool deep_check (State* t);
 		bool inv_solve (Cube& cu, Cube& t);
-
+		void delete_repeat_uc (int &frame_level);
 		Cube get_prime_state (int frame_level);
 
 		

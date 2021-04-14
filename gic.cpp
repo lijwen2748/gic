@@ -1,5 +1,6 @@
 #include "gic.h"
 #include <vector>
+#include <set>
 #include <iostream>
 #include "utility.h"
 #include "statistics.h"
@@ -113,7 +114,8 @@ namespace gic{
 			//print_frame_lev (frame_level_);
 			set_new_frame (); 
 			//cout<<"add new frame"<<endl;
-			
+			delete_repeat_uc (frame_level_);  // delete uc in frame-i if uc appears in frame-j for j>i
+
 			for (int i = 1;i<frame_level_;i++){
 				for (auto it = F_[i]->frame.begin();it != F_[i]->frame.end();++it){
 					//test ,model_->prime(361)
@@ -321,6 +323,18 @@ namespace gic{
 	    return res;
 	}
     
+	void Gic::delete_repeat_uc (int &frame_level){
+		set<Cube> all;
+		for (int i = frame_level-1;i >= 1;--i){
+			for(auto it = F_[i]->frame.begin();it != F_[i]->frame.end();++it){
+				if(all.find(*it) == all.end()) all.insert (*it);
+				else{
+					F_[i]->frame.erase (it);
+					it--;
+				}
+			}
+		}
+	}
 	
 	bool Gic::inv_sat_solve (State* init, Cube& t){
 		Cube assumption = init->s();
