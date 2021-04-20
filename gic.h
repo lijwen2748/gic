@@ -198,6 +198,7 @@ namespace gic
 		
 		void generalize_mic (Cube& s,int& frame_level);
 		bool down ( int pre_level, Cube& c,Cube& required);
+		bool ctg_down ( int pre_level,Cube& c, Cube& required);
 		bool is_sat_assuming (Cube& cu,int& frame_level);
 		Cube get_intersection (Cube& a, Cube& b);
 		void set_common (Cube& st);

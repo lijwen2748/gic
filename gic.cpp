@@ -112,6 +112,7 @@ namespace gic{
 			}
 			//propagation stage
 			//print_frame_lev (frame_level_);
+			//print_frame ();
 			set_new_frame (); 
 			//cout<<"add new frame"<<endl;
 			delete_repeat_uc (frame_level_);  // delete uc in frame-i if uc appears in frame-j for j>i
@@ -148,10 +149,15 @@ namespace gic{
 	}
 	
 	void Gic::set_new_frame (){
+		//add two frame once
 		Frame* new_frame = new Frame();
 		new_frame->frame_solver = new InvSolver (model_, verbose_);
 		F_.push_back (new_frame);
 		frame_level_++;
+		//Frame* new_frame1 = new Frame();
+		//new_frame1->frame_solver = new InvSolver (model_, verbose_);
+		//F_.push_back (new_frame1);
+		//frame_level_++;
 	}
 	
 	bool Gic::rec_block (Cube& s,int i){
@@ -170,13 +176,18 @@ namespace gic{
 		//cout<<"get mic"<<endl;
 		generalize_mic(s,i);
 		std::sort (s.begin(), s.end(), gic::comp);
-		add_mic_to_frame (s,i);   //add mic as cube,used as neg clause
+		int level=i+1;
+		while((level <= frame_level_) && (!inductive_solve (s,level-1)) ){
+			level++;
+		}
+		level--;
+		add_mic_to_frame (s,level);   //add mic as cube,used as neg clause
 		return true;
 	}
 
 	void Gic::generalize_mic ( Cube& s,int& frame_level){
 		
-		int max_fail = 5;
+		int max_fail = 3;
 		Cube required;
 		int fail = 0;
 
@@ -222,6 +233,36 @@ namespace gic{
 		}
 	}
 	
+	bool Gic::ctg_down ( int pre_level,Cube& c, Cube& required){
+		int ctg_level;
+		int max_ctg = 3;
+		while (true){
+			if (inv_sat_solve (init_->s(), c)) return false;
+			if (!is_sat_assuming (c,pre_level)){
+				Cube uc = get_uc(F_[pre_level]->frame_solver);
+				if (uc.empty()) uc = c;
+				Cube uc_comp = complement (c, uc);
+				while (!inv_sat_solve (init_, uc)){
+				
+					assert (!uc_comp.empty());
+					uc.push_back (*(uc_comp.begin()));
+					uc_comp.erase (uc_comp.begin());
+				}
+				c = uc;
+				return true;
+			}
+			else if (pre_level >= frame_level_){
+				return false;
+			}
+			else{
+				Cube s = get_predecessor (c,pre_level);
+				Cube uc_comp = complement (c, s);
+				if (get_intersection (uc_comp,required).size() != 0) return false;
+				c = get_intersection (c,s);
+			}
+		}
+	}
+
 	bool Gic::cube_non_neg (Cube& uc){
 		for (auto it = uc.begin();it != uc.end();++it){
 			if ((*it) > 0) return true;
@@ -404,6 +445,7 @@ namespace gic{
 		if (cu.empty()) cu = F_state->s();
 		remove_input_flag (cu);
 		std::sort (cu.begin(), cu.end(), gic::comp);
+		delete F_state;
 		return cu;
 	}
 
@@ -448,6 +490,7 @@ namespace gic{
 		if (cu.empty()) cu = F_state->s();
 		remove_input_flag (cu);
 		std::sort (cu.begin(), cu.end(), gic::comp);
+		delete F_state;
 		return cu;
 	}
 
