@@ -174,7 +174,8 @@ namespace gic{
 		assert (!inductive_solve (uc,i-1));
 		s = uc;
 		//cout<<"get mic"<<endl;
-		generalize_mic(s,i);
+		generalize_ctg_mic(s,i,1);
+		//generalize_mic(s, i);
 		std::sort (s.begin(), s.end(), gic::comp);
 		int level=i+1;
 		while((level <= frame_level_) && (!inductive_solve (s,level-1)) ){
@@ -233,9 +234,31 @@ namespace gic{
 		}
 	}
 	
-	bool Gic::ctg_down ( int pre_level,Cube& c, Cube& required){
-		int ctg_level;
-		int max_ctg = 3;
+	void Gic::generalize_ctg_mic ( Cube& s,int frame_level,int recur_depth){
+		
+		int max_fail = 3;
+		Cube required;
+		int fail = 0;
+
+		for (int i = s.size()-1; i >= 0; i--){
+			Cube cand;
+			for (int j = 0;j < s.size(); ++j){
+				if (j != i) cand.push_back (s[j]);
+			}
+
+			if (ctg_down (frame_level-1,recur_depth,cand,required)){
+				s = cand;
+				fail = 0;
+			}
+			else{
+				if (++fail > max_fail) break;
+				required.push_back(s[i]);
+			}
+		}
+	}
+
+	bool Gic::ctg_down ( int pre_level,int recur_depth,Cube& c, Cube& required){
+		int ctg_level = 0;
 		while (true){
 			if (inv_sat_solve (init_->s(), c)) return false;
 			if (!is_sat_assuming (c,pre_level)){
@@ -251,14 +274,25 @@ namespace gic{
 				c = uc;
 				return true;
 			}
-			else if (pre_level >= frame_level_){
+			else if (recur_depth > max_depth){
 				return false;
 			}
 			else{
 				Cube s = get_predecessor (c,pre_level);
-				Cube uc_comp = complement (c, s);
-				if (get_intersection (uc_comp,required).size() != 0) return false;
-				c = get_intersection (c,s);
+				bool judge = (ctg_level < max_ctg) && (pre_level > 0) && !(inv_sat_solve (init_->s(), s));
+				if (judge && !is_sat_assuming (s,pre_level-1)){
+					++ ctg_level;
+					int j = pre_level;
+					while(!is_sat_assuming (s,j) && (j<frame_level_)) ++j;
+					generalize_ctg_mic(s,j,recur_depth+1);
+					add_mic_to_frame(s, j);
+				}
+				else{
+					ctg_level = 0;
+					Cube uc_comp = complement (c, s);
+					if (get_intersection (uc_comp,required).size() != 0) return false;
+					c = get_intersection (c,s);
+				}
 			}
 		}
 	}
@@ -341,7 +375,7 @@ namespace gic{
 		return res;
 	}
 	
-	bool Gic::is_sat_assuming (Cube& cu,int& frame_level){
+	bool Gic::is_sat_assuming (Cube& cu,int frame_level){
 		Cube tmp;
 		tmp.push_back (F_[frame_level]->frame_solver->get_flag ());
 		tmp.insert (tmp.end(),cu.begin(),cu.end());

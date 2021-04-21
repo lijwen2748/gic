@@ -104,6 +104,9 @@ namespace gic
 
 		int frame_level_;
 		
+		int max_depth = 1;
+
+		int max_ctg = 3;
 
 		/*****main function******/
 
@@ -198,8 +201,9 @@ namespace gic
 		
 		void generalize_mic (Cube& s,int& frame_level);
 		bool down ( int pre_level, Cube& c,Cube& required);
-		bool ctg_down ( int pre_level,Cube& c, Cube& required);
-		bool is_sat_assuming (Cube& cu,int& frame_level);
+		void generalize_ctg_mic ( Cube& s,int frame_level,int recur_depth);
+		bool ctg_down ( int pre_level,int recur_depth,Cube& c, Cube& required);
+		bool is_sat_assuming (Cube& cu,int frame_level);
 		Cube get_intersection (Cube& a, Cube& b);
 		void set_common (Cube& st);
 		bool common_in_initial ();
